@@ -14,20 +14,25 @@ namespace HitsSniffer
 {
     internal class Program
     {
-        private const string RegexPattern = @"\{.+?\}";
-        private const string HitUrl = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling&sid={0}";
+        private static string RegexPattern { get; } = @"\{.+?\}";
+        private static string HitUrl { get; } = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling&sid={0}";
+        private static string ContentType { get; } = "text/plain; charset=UTF-8";
+        private static string UserAgent { get; } = "curl/7.65.3";
+        private static string AcceptHeader { get; } = "*/*";
+
         private static string LastSID;
         private static DateTime Timer;
         private static int PingInterval;
         private static int PingTimeout;
 
         private const bool DEBUG = true;
+        private static int IntervalDebugMS = 2000;
 
         private static void Main(string[] args)
         {
             LastSID = GetSID(out PingInterval, out PingTimeout);
 
-            var timer = new Timer(state => TimerCallback(LastSID, state), null, 0, DEBUG ? 500 : PingInterval);
+            var timer = new Timer(state => TimerCallback(LastSID, state), null, 0, DEBUG ? IntervalDebugMS : PingInterval);
             Console.ReadKey(true);
         }
 
@@ -62,7 +67,7 @@ namespace HitsSniffer
         {
             const string url = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling";
 
-            string rawJSON = url.MakeRequest();
+            string rawJSON = url.MakeRequest(ContentType, UserAgent, AcceptHeader);
 
             if (!Regex.IsMatch(rawJSON, RegexPattern))
             {
@@ -81,11 +86,13 @@ namespace HitsSniffer
             return obj?["sid"].ToObject<string>();
         }
 
-        private static IEnumerable<string> GetData(string sid)
+        private static IEnumerable<HitData> GetData(string sid)
         {
-            string url = string.Format(HitUrl, sid);
+            // TODO: If exception occurred then use a new sid
+            // TODO: XCrewate a system to identify missing hits
 
-            string json = url.MakeRequest();
+            string url = string.Format(HitUrl, sid);
+            string json = url.MakeRequest(ContentType, UserAgent, AcceptHeader);
 
             if (!Regex.IsMatch(json, RegexPattern))
                 yield break;
@@ -97,7 +104,10 @@ namespace HitsSniffer
                 var obj = JsonConvert.DeserializeObject(match.Value) as JObject;
 
                 if (obj?["hit"] != null)
-                    yield return obj["hit"].ToObject<string>();
+                {
+                    string data = obj["hit"].ToObject<string>();
+                    yield return new HitData(data, sid);
+                }
             }
         }
 
@@ -109,6 +119,29 @@ namespace HitsSniffer
                 Timer = DateTime.UtcNow;
 
             return hasTimePassed;
+        }
+    }
+
+    public class HitData
+    {
+        public string Data { get; }
+        public string SID { get; }
+
+        private HitData()
+        {
+        }
+
+        public HitData(string data, string sid)
+        {
+            Data = data;
+            SID = sid;
+        }
+
+        public override string ToString()
+        {
+            return $"SID: {SID}" +
+                   Environment.NewLine +
+                   $"Data: {Data}";
         }
     }
 }
