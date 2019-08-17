@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -89,13 +91,34 @@ namespace HitsSniffer
         private static IEnumerable<HitData> GetData(string sid)
         {
             // TODO: If exception occurred then use a new sid
-            // TODO: XCrewate a system to identify missing hits
+            // TODO: Create a system to identify missing hits
 
             string url = string.Format(HitUrl, sid);
-            string json = url.MakeRequest(ContentType, UserAgent, AcceptHeader);
+            string json;
+
+            try
+            {
+                json = url.MakeRequest(ContentType, UserAgent, AcceptHeader, true);
+            }
+            catch
+            // (Exception e)
+            {
+                string lastSID = (string)LastSID.Clone();
+
+                LastSID = GetSID();
+                Console.WriteLine($"Error occurred while making request! (Changing SID from '{lastSID}' to '{LastSID}')", Color.Red);
+
+                string newUrl = string.Format(HitUrl, LastSID);
+                json = newUrl.MakeRequest(ContentType, UserAgent, AcceptHeader);
+            }
 
             if (!Regex.IsMatch(json, RegexPattern))
+            {
+                if (DEBUG)
+                    Console.WriteLine($"Not matching:\n{json}");
+
                 yield break;
+            }
 
             var matches = Regex.Matches(json, RegexPattern);
 
@@ -142,6 +165,39 @@ namespace HitsSniffer
             return $"SID: {SID}" +
                    Environment.NewLine +
                    $"Data: {Data}";
+        }
+    }
+
+    public static class SqlWorker
+    {
+        public static void InsertQuery(string rawData)
+        {
+            // TODO: Get connectionString from ENV
+            //string connectionString =
+            //    "Server=localhost;" +
+            //    "Database=jardineria;" +
+            //    "User ID=usuario;" +
+            //    "Password=usuario;" +
+            //    "Pooling=false";
+
+            using (IDbConnection dbcon = new SqlConnection(connectionString))
+            {
+                dbcon.Open();
+                using (IDbCommand dbcmd = dbcon.CreateCommand())
+                {
+                    string sql =
+                        "SELECT * FROM gamasproducto";
+                    dbcmd.CommandText = sql;
+                    using (IDataReader reader = dbcmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Console.WriteLine("Gama: {0}", reader["Gama"].ToString());
+                            Console.WriteLine("Descripción: {0}", reader["DescripcionTexto"].ToString());
+                        }
+                    }
+                }
+            }
         }
     }
 }
