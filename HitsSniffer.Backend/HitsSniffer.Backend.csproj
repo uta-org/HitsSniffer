@@ -68,8 +68,11 @@
     <Compile Include="Controller\IntervalOrgWorker.cs" />
     <Compile Include="Controller\IntervalRepoWorker.cs" />
     <Compile Include="Controller\IntervalUserWorker.cs" />
+    <Compile Include="Model\Attrs\DbColumnNameAttribute.cs" />
+    <Compile Include="Model\Attrs\DbTableNameAttribute.cs" />
     <Compile Include="Model\HitData.cs" />
     <Compile Include="Model\Interfaces\IData.cs" />
+    <Compile Include="Model\Interfaces\IPrimaryKey.cs" />
     <Compile Include="Model\OrgData.cs" />
     <Compile Include="Model\RepoData.cs" />
     <Compile Include="Model\UserData.cs" />

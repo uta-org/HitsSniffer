@@ -59,6 +59,9 @@ namespace HitsSniffer.Controller
             }
 
             data.ForEach(Console.WriteLine);
+
+            foreach (var hitData in data)
+                hitData.DoQuery();
         }
 
         private string GetSID()
@@ -129,7 +132,7 @@ namespace HitsSniffer.Controller
                 if (obj?["hit"] != null)
                 {
                     string data = obj["hit"].ToObject<string>();
-                    yield return new HitData(data, sid);
+                    yield return new HitData(data, sid).TransformData();
                 }
             }
         }

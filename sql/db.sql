@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-08-2019 a las 18:16:02
+-- Tiempo de generación: 17-08-2019 a las 19:05:52
 -- Versión del servidor: 10.3.16-MariaDB
 -- Versión de PHP: 7.3.7
 
@@ -36,7 +36,8 @@ CREATE TABLE `hit_counter` (
   `date` date NOT NULL,
   `path` text NOT NULL,
   `hits` int(11) NOT NULL,
-  `hash` text NOT NULL
+  `hash` text NOT NULL,
+  `sid` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
