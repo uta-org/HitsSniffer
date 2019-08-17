@@ -8,8 +8,8 @@ namespace HitsSniffer.Model.Attrs
     {
         public string Name { get; }
         public int Order { get; } = -1;
-        public MySqlDbType MySqlDbType { get; }
-        public DbType DbType { get; }
+        public MySqlDbType? MySqlDbType { get; }
+        public DbType? DbType { get; }
 
         private DbColumnNameAttribute()
         {

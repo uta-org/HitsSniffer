@@ -41,21 +41,6 @@ namespace HitsSniffer.Controller
             IsOpen = true;
         }
 
-        //public static async void DoQueryAsync<T>(this T instance)
-        //    where T : IPrimaryKey
-        //{
-        //    while (Connection.State != ConnectionState.Open)
-        //        await Task.Delay(100);
-
-        //    using (var cmd = Connection.CreateCommand())
-        //    {
-        //        string tableName = SqlHelper.GetTableNameFromInstance<T>();
-        //        var values = instance.GetValuesFromInstance();
-
-        //        cmd.InsertInto<T>(tableName, true, values);
-        //    }
-        //}
-
         public static void DoQuery<T>(this T instance)
             where T : IPrimaryKey
         {
@@ -67,9 +52,7 @@ namespace HitsSniffer.Controller
                 string tableName = SqlHelper.GetTableNameFromInstance<T>();
 
                 var list = instance.GetColumnData();
-                var values = SqlHelper.GetValuesFromInstance(list);
-
-                cmd.InsertInto<T>(list, tableName, true, values);
+                cmd.InsertInto(list, tableName, true);
             }
         }
 
@@ -87,31 +70,26 @@ namespace HitsSniffer.Controller
 
     public static class SqlHelper
     {
-        public static void InsertInto<T>(this MySqlCommand cmd, List<ColumnData> list, string tableName, bool executeQuery, params object[] objs)
-            where T : IPrimaryKey
+        public static void InsertInto(this MySqlCommand cmd, List<ColumnData> list, string tableName, bool executeQuery)
         {
-            string columnHeader = GetColumns<T>(out int columnCount, list);
+            string columnHeader = GetColumns(list);
 
-            if (objs.Length != columnCount)
-                throw new ArgumentException("Number of params must be equal!", nameof(objs));
-
-            string valuesHeader = string.Join(",", objs.Select((o, index) => $"@val{index}"));
+            string valuesHeader = string.Join(",", list.Select((o, index) => $"@val{index}"));
 
             string query = $"INSERT INTO {tableName}({columnHeader}) VALUES ({valuesHeader})";
 
             {
                 int index = 0;
-                foreach (var o in objs)
+                foreach (var item in list)
                 {
-                    //cmd.Parameters.AddWithValue($"@val{index}", o);
+                    if (item.MySqlDbType.HasValue)
+                        cmd.Parameters.Add(new MySqlParameter { ParameterName = $"@val{index}", Value = item.Value, MySqlDbType = item.MySqlDbType.Value, DbType = item.DbType.Value });
+                    else
+                        cmd.Parameters.Add(new MySqlParameter { ParameterName = $"@val{index}", Value = item.Value });
 
-                    // new MySqlParameter { ParameterName = $"@val{index}", Value = o }
-                    cmd.Parameters.Add(new MySqlParameter { ParameterName = $"@val{index}", Value = o });
                     ++index;
                 }
             }
-
-            //cmd.Parameters.AddRange(objs);
 
             cmd.CommandText = query;
             cmd.CommandType = CommandType.Text;
@@ -131,11 +109,8 @@ namespace HitsSniffer.Controller
             }
         }
 
-        private static string GetColumns<T>(out int columnCount, List<ColumnData> list)
-            where T : IPrimaryKey
+        private static string GetColumns(List<ColumnData> list)
         {
-            columnCount = list.Count;
-
             return string.Join(",", list.Select(attr => attr?.Name).Where(attr => !string.IsNullOrEmpty(attr)));
         }
 
@@ -169,26 +144,19 @@ namespace HitsSniffer.Controller
             return (typeof(T).GetCustomAttributes(true).First() as DbColumnNameAttribute)?.Name;
         }
 
-        public static object[] GetValuesFromInstance(List<ColumnData> list)
-        {
-            return list.Select(item => item.Value).ToArray();
-
-            // return typeof(T).GetProperties().Select(prop => prop.GetValue(instance)).ToArray();
-        }
-
         public class ColumnData
         {
             public int Order { get; }
             public string Name { get; }
             public object Value { get; }
-            public MySqlDbType MySqlDbType { get; }
-            public DbType DbType { get; }
+            public MySqlDbType? MySqlDbType { get; }
+            public DbType? DbType { get; }
 
             private ColumnData()
             {
             }
 
-            public ColumnData(int order, string name, object value, MySqlDbType mySqlDbType, DbType dbType)
+            public ColumnData(int order, string name, object value, MySqlDbType? mySqlDbType, DbType? dbType)
             {
                 Order = order;
                 Name = name;
