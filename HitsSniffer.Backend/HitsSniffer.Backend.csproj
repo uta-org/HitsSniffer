@@ -62,8 +62,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model\HitData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Controller\SqlWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HitsSniffer", "HitsSniffer\HitsSniffer.csproj", "{DCC3AA2D-443B-4276-9D48-7395F89EBA4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HitsSniffer.Backend", "HitsSniffer.Backend\HitsSniffer.Backend.csproj", "{DCC3AA2D-443B-4276-9D48-7395F89EBA4E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uzLib.Lite", "..\uzLib.Lite\uzLib.Lite\uzLib.Lite.csproj", "{D4DA84F9-521F-438B-9C70-7FE8F4D1F32A}"
 EndProject

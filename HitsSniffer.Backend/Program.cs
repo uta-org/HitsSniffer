@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -142,62 +140,6 @@ namespace HitsSniffer
                 Timer = DateTime.UtcNow;
 
             return hasTimePassed;
-        }
-    }
-
-    public class HitData
-    {
-        public string Data { get; }
-        public string SID { get; }
-
-        private HitData()
-        {
-        }
-
-        public HitData(string data, string sid)
-        {
-            Data = data;
-            SID = sid;
-        }
-
-        public override string ToString()
-        {
-            return $"SID: {SID}" +
-                   Environment.NewLine +
-                   $"Data: {Data}";
-        }
-    }
-
-    public static class SqlWorker
-    {
-        public static void InsertQuery(string rawData)
-        {
-            // TODO: Get connectionString from ENV
-            //string connectionString =
-            //    "Server=localhost;" +
-            //    "Database=jardineria;" +
-            //    "User ID=usuario;" +
-            //    "Password=usuario;" +
-            //    "Pooling=false";
-
-            using (IDbConnection dbcon = new SqlConnection(connectionString))
-            {
-                dbcon.Open();
-                using (IDbCommand dbcmd = dbcon.CreateCommand())
-                {
-                    string sql =
-                        "SELECT * FROM gamasproducto";
-                    dbcmd.CommandText = sql;
-                    using (IDataReader reader = dbcmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            Console.WriteLine("Gama: {0}", reader["Gama"].ToString());
-                            Console.WriteLine("Descripción: {0}", reader["DescripcionTexto"].ToString());
-                        }
-                    }
-                }
-            }
         }
     }
 }
