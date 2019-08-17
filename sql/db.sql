@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-08-2019 a las 17:39:43
+-- Tiempo de generación: 17-08-2019 a las 18:16:02
 -- Versión del servidor: 10.3.16-MariaDB
 -- Versión de PHP: 7.3.7
 
@@ -30,9 +30,9 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `hit_counter` (
   `id` int(11) NOT NULL,
-  `org_owner_id` int(11) NOT NULL,
-  `user_owner_id` int(11) NOT NULL,
-  `repo_id` int(11) NOT NULL,
+  `org_owner_id` int(11) DEFAULT NULL,
+  `user_owner_id` int(11) DEFAULT NULL,
+  `repo_id` int(11) DEFAULT NULL,
   `date` date NOT NULL,
   `path` text NOT NULL,
   `hits` int(11) NOT NULL,
@@ -64,8 +64,8 @@ CREATE TABLE `organization_stats` (
 
 CREATE TABLE `repository_stats` (
   `id` int(11) NOT NULL,
-  `org_owner_id` int(11) NOT NULL,
-  `user_owner_id` int(11) NOT NULL,
+  `org_owner_id` int(11) DEFAULT NULL,
+  `user_owner_id` int(11) DEFAULT NULL,
   `name` text NOT NULL,
   `date` date NOT NULL,
   `commits` int(11) NOT NULL,

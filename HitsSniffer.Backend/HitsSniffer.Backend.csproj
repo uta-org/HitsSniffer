@@ -62,7 +62,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controller\BlacklistWorker.cs" />
+    <Compile Include="Controller\Interfaces\IWorker.cs" />
+    <Compile Include="Controller\IntervalHitsWorker.cs" />
+    <Compile Include="Controller\IntervalOrgWorker.cs" />
+    <Compile Include="Controller\IntervalRepoWorker.cs" />
+    <Compile Include="Controller\IntervalUserWorker.cs" />
     <Compile Include="Model\HitData.cs" />
+    <Compile Include="Model\OrgData.cs" />
+    <Compile Include="Model\RepoData.cs" />
+    <Compile Include="Model\UserData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Controller\SqlWorker.cs" />

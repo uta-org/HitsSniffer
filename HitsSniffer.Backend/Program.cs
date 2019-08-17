@@ -1,145 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using uzLib.Lite.Extensions;
-using uzLib.Lite.ExternalCode.Extensions;
-using Console = Colorful.Console;
+﻿using Console = Colorful.Console;
 
 namespace HitsSniffer
 {
+    // TODO: Create a blacklist worker, where users/repos/orgs without enough activity will not be tracked
+    // Conditions must be: activity in the last 10 days, at least a week (repos/orgs) and one month (users) old, at least 50 commits (users/repos) and 5 repos (orgs)
+    // TODO: Search how to awake this process when a reboot is done in Linux
+
     internal class Program
     {
-        private static string RegexPattern { get; } = @"\{.+?\}";
-        private static string HitUrl { get; } = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling&sid={0}";
-        private static string ContentType { get; } = "text/plain; charset=UTF-8";
-        private static string UserAgent { get; } = "curl/7.65.3";
-        private static string AcceptHeader { get; } = "*/*";
-
-        private static string LastSID;
-        private static DateTime Timer;
-        private static int PingInterval;
-        private static int PingTimeout;
-
-        private const bool DEBUG = true;
-        private static int IntervalDebugMS = 2000;
-
         private static void Main(string[] args)
         {
-            LastSID = GetSID(out PingInterval, out PingTimeout);
-
-            var timer = new Timer(state => TimerCallback(LastSID, state), null, 0, DEBUG ? IntervalDebugMS : PingInterval);
             Console.ReadKey(true);
-        }
-
-        private static void TimerCallback(string sid, object state)
-        {
-            if (string.IsNullOrEmpty(LastSID) || HasTimePassed())
-                LastSID = GetSID();
-
-            if (string.IsNullOrEmpty(sid))
-            {
-                Console.WriteLine("There was an error receiving the SID!", Color.Red);
-                return;
-            }
-
-            var data = GetData(sid).ToList();
-
-            if (data.IsNullOrEmpty())
-            {
-                Console.WriteLine($"Wrong request made at {DateTime.Now} with SID '{sid}'!", Color.Red);
-                return;
-            }
-
-            data.ForEach(Console.WriteLine);
-        }
-
-        private static string GetSID()
-        {
-            return GetSID(out int interval, out int timeout);
-        }
-
-        private static string GetSID(out int interval, out int timeout)
-        {
-            const string url = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling";
-
-            string rawJSON = url.MakeRequest(ContentType, UserAgent, AcceptHeader);
-
-            if (!Regex.IsMatch(rawJSON, RegexPattern))
-            {
-                interval = -1;
-                timeout = -1;
-
-                return string.Empty;
-            }
-
-            string json = Regex.Match(rawJSON, RegexPattern).Value;
-            var obj = JsonConvert.DeserializeObject(json) as JObject;
-
-            timeout = (obj?["pingTimeout"].ToObject<int>()).GetValue(-1) / 1000;
-            interval = (obj?["pingInterval"].ToObject<int>()).GetValue(-1);
-
-            return obj?["sid"].ToObject<string>();
-        }
-
-        private static IEnumerable<HitData> GetData(string sid)
-        {
-            // TODO: If exception occurred then use a new sid
-            // TODO: Create a system to identify missing hits
-
-            string url = string.Format(HitUrl, sid);
-            string json;
-
-            try
-            {
-                json = url.MakeRequest(ContentType, UserAgent, AcceptHeader, true);
-            }
-            catch
-            // (Exception e)
-            {
-                string lastSID = (string)LastSID.Clone();
-
-                LastSID = GetSID();
-                Console.WriteLine($"Error occurred while making request! (Changing SID from '{lastSID}' to '{LastSID}')", Color.Red);
-
-                string newUrl = string.Format(HitUrl, LastSID);
-                json = newUrl.MakeRequest(ContentType, UserAgent, AcceptHeader);
-            }
-
-            if (!Regex.IsMatch(json, RegexPattern))
-            {
-                if (DEBUG)
-                    Console.WriteLine($"Not matching:\n{json}");
-
-                yield break;
-            }
-
-            var matches = Regex.Matches(json, RegexPattern);
-
-            foreach (Match match in matches)
-            {
-                var obj = JsonConvert.DeserializeObject(match.Value) as JObject;
-
-                if (obj?["hit"] != null)
-                {
-                    string data = obj["hit"].ToObject<string>();
-                    yield return new HitData(data, sid);
-                }
-            }
-        }
-
-        private static bool HasTimePassed()
-        {
-            bool hasTimePassed = DateTime.UtcNow - Timer > TimeSpan.FromSeconds(PingTimeout);
-
-            if (hasTimePassed)
-                Timer = DateTime.UtcNow;
-
-            return hasTimePassed;
         }
     }
 }
