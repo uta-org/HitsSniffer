@@ -102,7 +102,6 @@ namespace HitsSniffer.Controller
                 json = url.MakeRequest(ContentType, UserAgent, AcceptHeader, true);
             }
             catch
-            // (Exception e)
             {
                 string lastSID = (string)LastSID.Clone();
 

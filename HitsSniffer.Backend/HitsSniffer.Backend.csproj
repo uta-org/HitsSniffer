@@ -69,6 +69,7 @@
     <Compile Include="Controller\IntervalRepoWorker.cs" />
     <Compile Include="Controller\IntervalUserWorker.cs" />
     <Compile Include="Model\HitData.cs" />
+    <Compile Include="Model\Interfaces\IData.cs" />
     <Compile Include="Model\OrgData.cs" />
     <Compile Include="Model\RepoData.cs" />
     <Compile Include="Model\UserData.cs" />

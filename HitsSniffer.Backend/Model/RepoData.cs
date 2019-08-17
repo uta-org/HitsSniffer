@@ -1,8 +1,9 @@
 ﻿using System;
+using HitsSniffer.Model.Interfaces;
 
 namespace HitsSniffer.Model
 {
-    public class RepoData
+    public class RepoData : IData
     {
         public int Id { get; set; }
         public int? OrgId { get; set; }
