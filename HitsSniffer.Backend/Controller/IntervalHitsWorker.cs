@@ -15,7 +15,7 @@ using Console = Colorful.Console;
 
 namespace HitsSniffer.Controller
 {
-    public class IntervalHitsWorker : Singleton<IntervalHitsWorker>, IWorker
+    public sealed class IntervalHitsWorker : Singleton<IntervalHitsWorker>, IWorker
     {
         private static string RegexPattern { get; } = @"\{.+?\}";
         private static string HitUrl { get; } = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling&sid={0}";
@@ -23,7 +23,7 @@ namespace HitsSniffer.Controller
         private static string UserAgent { get; } = "curl/7.65.3";
         private static string AcceptHeader { get; } = "*/*";
 
-        public Timer Timer { get; }
+        public Timer Timer { get; private set; }
 
         private static string LastSID;
         private static DateTime InternalTimer;
@@ -33,13 +33,13 @@ namespace HitsSniffer.Controller
         private const bool DEBUG = true;
         private static int IntervalDebugMS = 2000;
 
-        public IntervalHitsWorker()
+        public void StartWorking()
         {
             LastSID = GetSID(out PingInterval, out PingTimeout);
             Timer = new Timer(state => TimerCallback(LastSID, state), null, 0, DEBUG ? IntervalDebugMS : PingInterval);
         }
 
-        private static void TimerCallback(string sid, object state)
+        private void TimerCallback(string sid, object state)
         {
             if (string.IsNullOrEmpty(LastSID) || HasTimePassed())
                 LastSID = GetSID();
@@ -61,12 +61,12 @@ namespace HitsSniffer.Controller
             data.ForEach(Console.WriteLine);
         }
 
-        private static string GetSID()
+        private string GetSID()
         {
             return GetSID(out int interval, out int timeout);
         }
 
-        private static string GetSID(out int interval, out int timeout)
+        private string GetSID(out int interval, out int timeout)
         {
             const string url = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling";
 
@@ -89,7 +89,7 @@ namespace HitsSniffer.Controller
             return obj?["sid"].ToObject<string>();
         }
 
-        private static IEnumerable<HitData> GetData(string sid)
+        private IEnumerable<HitData> GetData(string sid)
         {
             // TODO: If exception occurred then use a new sid
             // TODO: Create a system to identify missing hits
@@ -135,7 +135,7 @@ namespace HitsSniffer.Controller
             }
         }
 
-        private static bool HasTimePassed()
+        private bool HasTimePassed()
         {
             bool hasTimePassed = DateTime.UtcNow - InternalTimer > TimeSpan.FromSeconds(PingTimeout);
 

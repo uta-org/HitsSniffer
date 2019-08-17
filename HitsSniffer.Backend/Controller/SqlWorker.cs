@@ -16,6 +16,8 @@ namespace HitsSniffer.Controller
             //    "Password=usuario;" +
             //    "Pooling=false";
 
+            string connectionString = string.Empty;
+
             using (IDbConnection dbcon = new SqlConnection(connectionString))
             {
                 dbcon.Open();
