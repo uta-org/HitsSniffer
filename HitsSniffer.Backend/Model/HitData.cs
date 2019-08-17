@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Data;
 using HitsSniffer.Model.Attrs;
 using HitsSniffer.Model.Interfaces;
+using MySql.Data.MySqlClient;
 
 namespace HitsSniffer.Model
 {
@@ -11,40 +13,40 @@ namespace HitsSniffer.Model
 
         public string RawData { get; }
 
-        [DbColumnName("path")]
+        [DbColumnName("path", 6, MySqlDbType.Text, DbType.String)]
         public string Path { get; set; }
 
-        [DbColumnName("sid")]
+        [DbColumnName("sid", 9, MySqlDbType.Text, DbType.String)]
         public string SID { get; }
 
         // ===== END DATA FROM SNIFFING =====
 
         // ===== DATA FROM DATABASE =====
 
-        [DbColumnName("id")]
+        [DbColumnName("id", 1)]
         public int Id { get; set; }
 
         // TODO
-        [DbColumnName("org_owner_id")]
+        [DbColumnName("org_owner_id", 2)]
         public int? OrgId { get; set; }
 
         // TODO
-        [DbColumnName("user_owner_id")]
+        [DbColumnName("user_owner_id", 3)]
         public int? UserId { get; set; }
 
         // TODO
-        [DbColumnName("repo_id")]
+        [DbColumnName("repo_id", 4)]
         public int? RepoId { get; set; }
 
         // ====
 
-        [DbColumnName("date")]
+        [DbColumnName("date", 5)]
         public DateTime Date { get; set; }
 
-        [DbColumnName("hits")]
+        [DbColumnName("hits", 7)]
         public int Hits { get; set; }
 
-        [DbColumnName("hash")]
+        [DbColumnName("hash", 8, MySqlDbType.Text, DbType.String)]
         public string Hash { get; set; }
 
         // ===== END DATA FROM DATABASE =====

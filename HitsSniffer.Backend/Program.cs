@@ -1,4 +1,5 @@
-﻿using HitsSniffer.Controller;
+﻿using System.Runtime.InteropServices;
+using HitsSniffer.Controller;
 using Console = Colorful.Console;
 
 namespace HitsSniffer
@@ -13,8 +14,32 @@ namespace HitsSniffer
 
         private static void Main(string[] args)
         {
+            SqlWorker.OpenConnection();
+
+            handler = ConsoleEventCallback;
+            SetConsoleCtrlHandler(handler, true);
+
             HitsWorker.StartWorking();
             Console.ReadKey(true);
         }
+
+        private static bool ConsoleEventCallback(int eventType)
+        {
+            if (eventType == 2)
+            {
+                // Console exiting
+                SqlWorker.Release();
+            }
+
+            return false;
+        }
+
+        private static ConsoleEventDelegate handler;   // Keeps it from getting garbage collected
+
+        // Pinvoke
+        private delegate bool ConsoleEventDelegate(int eventType);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
     }
 }

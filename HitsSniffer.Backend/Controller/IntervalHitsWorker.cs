@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using HitsSniffer.Controller.Interfaces;
 using HitsSniffer.Model;
 using Newtonsoft.Json;
@@ -61,7 +62,10 @@ namespace HitsSniffer.Controller
             data.ForEach(Console.WriteLine);
 
             foreach (var hitData in data)
+            {
+                //Task.Factory.StartNew(hitData.DoQuery);
                 hitData.DoQuery();
+            }
         }
 
         private string GetSID()
