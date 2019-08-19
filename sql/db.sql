@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-08-2019 a las 12:34:04
+-- Tiempo de generación: 19-08-2019 a las 21:33:04
 -- Versión del servidor: 10.3.16-MariaDB
 -- Versión de PHP: 7.3.7
 
@@ -30,8 +30,6 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `hit_counter` (
   `id` int(11) NOT NULL,
-  `org_owner_id` int(11) DEFAULT NULL,
-  `user_owner_id` int(11) DEFAULT NULL,
   `repo_id` int(11) DEFAULT NULL,
   `date` date NOT NULL,
   `path` text NOT NULL,
@@ -78,6 +76,8 @@ CREATE TABLE `organization_stats` (
 
 CREATE TABLE `repositories` (
   `id` int(11) NOT NULL,
+  `org_id` int(11) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL,
   `name` text NOT NULL,
   `date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -147,9 +147,7 @@ CREATE TABLE `user_stats` (
 --
 ALTER TABLE `hit_counter`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `owner_id` (`org_owner_id`,`repo_id`),
-  ADD KEY `user_owner_id` (`user_owner_id`),
-  ADD KEY `repo_id` (`repo_id`);
+  ADD KEY `owner_id` (`repo_id`);
 
 --
 -- Indices de la tabla `organizations`
@@ -168,7 +166,9 @@ ALTER TABLE `organization_stats`
 -- Indices de la tabla `repositories`
 --
 ALTER TABLE `repositories`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `org_id` (`org_id`) USING BTREE,
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indices de la tabla `repository_stats`
@@ -251,19 +251,20 @@ ALTER TABLE `hit_counter`
 -- Filtros para la tabla `organizations`
 --
 ALTER TABLE `organizations`
-  ADD CONSTRAINT `organizations_ibfk_1` FOREIGN KEY (`id`) REFERENCES `hit_counter` (`org_owner_id`);
+  ADD CONSTRAINT `organizations_ibfk_1` FOREIGN KEY (`id`) REFERENCES `repositories` (`org_id`);
 
 --
 -- Filtros para la tabla `organization_stats`
 --
 ALTER TABLE `organization_stats`
-  ADD CONSTRAINT `organization_stats_ibfk_1` FOREIGN KEY (`id`) REFERENCES `repository_stats` (`org_owner_id`);
+  ADD CONSTRAINT `organization_stats_ibfk_1` FOREIGN KEY (`id`) REFERENCES `repository_stats` (`org_owner_id`),
+  ADD CONSTRAINT `organization_stats_ibfk_2` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`);
 
 --
 -- Filtros para la tabla `users`
 --
 ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`id`) REFERENCES `hit_counter` (`user_owner_id`);
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`id`) REFERENCES `repositories` (`user_id`);
 
 --
 -- Filtros para la tabla `user_stats`

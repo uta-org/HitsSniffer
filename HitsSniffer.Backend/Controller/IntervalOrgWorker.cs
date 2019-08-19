@@ -31,11 +31,20 @@ namespace HitsSniffer.Controller
             foreach (var whitelistedUrl in WhitelistedUrls)
             {
                 Driver.Navigate().GoToUrl(whitelistedUrl);
+
+                // Create a instance of the OrgData class, setting all the needed props
+                // Then, save it on the DB
             }
         }
 
         private static void GetWhitelistedUrlsFromDatabase()
         {
+            // Get organizations names and add it prefix
+
+            // TODO
+            // For this, we will need an IEnumerator with all the records from the repository table
+            // Then, foreach record we will get the linked org/user (name) for the repository
+            // Then, we will form the complete url
         }
     }
 }

@@ -85,11 +85,11 @@ namespace HitsSniffer.Model
         {
             bool toggleFlag = GetDataAsUser(out string userOrOrganization, out string repository);
 
-            var orgId = OrgId;
-            var userId = UserId;
-            var repoId = RepoId;
+            SetIds(userOrOrganization, repository, toggleFlag, out var orgId, out var userId, out var repoId);
 
-            SetIds(userOrOrganization, repository, toggleFlag, out orgId, out userId, out repoId);
+            OrgId = orgId;
+            UserId = userId;
+            RepoId = repoId;
         }
 
         // true = user, false = organization
