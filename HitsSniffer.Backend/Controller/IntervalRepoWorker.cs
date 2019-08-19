@@ -1,6 +1,6 @@
 ﻿namespace HitsSniffer.Controller
 {
-    internal class IntervalRepoWorker
+    public class IntervalRepoWorker
     {
     }
 }

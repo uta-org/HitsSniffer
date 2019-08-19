@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace HitsSniffer.Controller
         private static bool IsOpen { get; set; }
 
         private static MySqlConnection Connection { get; set; }
+
+        private static bool IsBeginTransaction;
 
         // Thanks to: https://ourcodeworld.com/articles/read/218/how-to-connect-to-mysql-with-c-sharp-winforms-and-xampp
         public static void OpenConnection()
@@ -44,6 +47,9 @@ namespace HitsSniffer.Controller
         public static void DoQuery<T>(this T instance)
             where T : IPrimaryKey
         {
+            if (instance == null)
+                throw new ArgumentNullException(nameof(instance));
+
             while (Connection.State != ConnectionState.Open)
                 Thread.Sleep(100);
 
@@ -53,6 +59,148 @@ namespace HitsSniffer.Controller
 
                 var list = instance.GetColumnData();
                 cmd.InsertInto(list, tableName, true);
+            }
+        }
+
+        //public static bool DoExists<T>(this T instance)
+        //    where T : IData
+        //{
+        //    if (instance == null)
+        //        throw new ArgumentNullException(nameof(instance));
+
+        //    while (Connection.State != ConnectionState.Open)
+        //        Thread.Sleep(100);
+
+        //    using (var cmd = Connection.CreateCommand())
+        //    {
+        //        string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+
+        //        string query = $"SELECT COUNT(*) FROM {tableName} WHERE name = @name";
+
+        //        cmd.CommandText = query;
+        //        cmd.CommandType = CommandType.Text;
+        //        cmd.Parameters.AddWithValue("@name", instance.Name);
+
+        //        int recordNum = (int)cmd.ExecuteScalar();
+
+        //        return recordNum > 0;
+        //    }
+        //}
+
+        public static int DoExists<T>(this T instance)
+            where T : IData
+        {
+            if (instance == null)
+                throw new ArgumentNullException(nameof(instance));
+
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+
+                string query = $"SELECT id FROM {tableName} WHERE name = @name";
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.AddWithValue("@name", instance.Name);
+
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                        return int.Parse(reader["id"].ToString());
+            }
+
+            return -1;
+        }
+
+        public static int? BeginExistsTransaction<T>(string name)
+            where T : IData
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+
+                string query = $"SELECT id FROM {tableName} WHERE name = @name";
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.AddWithValue("@name", name);
+
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                        return int.Parse(reader["id"].ToString());
+            }
+
+            IsBeginTransaction = true;
+
+            return null;
+        }
+
+        public static bool EndExistsTransaction()
+        {
+            if (!IsBeginTransaction)
+                return false;
+
+            IsBeginTransaction = false;
+            return true;
+        }
+
+        public static int RegisterTableValue<T>(this T instance)
+            where T : IData
+        {
+            if (instance == null)
+                throw new ArgumentNullException(nameof(instance));
+
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+
+                string query = $"INSERT INTO {tableName}(id,name,date) VALUES(@id, @name, @date)";
+
+                cmd.Parameters.AddWithValue("@name", instance.Name);
+                cmd.Parameters.AddWithValue("@date", DateTime.Now);
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+
+                cmd.ExecuteNonQuery();
+                return (int)cmd.LastInsertedId;
+            }
+        }
+
+        public static int RegisterTableValue<T>(string name)
+            where T : IData
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+
+                string query = $"INSERT INTO {tableName}(id,name,date) VALUES(@id, @name, @date)";
+
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@date", DateTime.Now);
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+
+                cmd.ExecuteNonQuery();
+                return (int)cmd.LastInsertedId;
             }
         }
 
@@ -151,10 +299,13 @@ namespace HitsSniffer.Controller
                 .ToList();
         }
 
-        public static string GetTableNameFromInstance<T>()
+        public static string GetTableNameFromInstance<T>(bool mainTable = false)
             where T : IPrimaryKey
         {
-            return (typeof(T).GetCustomAttributes(typeof(DbTableNameAttribute), false).First() as DbTableNameAttribute)?.Name;
+            return typeof(T)
+                .GetCustomAttributes(typeof(DbTableNameAttribute), false)
+                .Cast<DbTableNameAttribute>()
+                .First(attr => attr?.MainTable == mainTable)?.Name;
         }
 
         public class ColumnData

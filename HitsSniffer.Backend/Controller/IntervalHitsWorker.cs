@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using HitsSniffer.Controller.Interfaces;
 using HitsSniffer.Model;
 using Newtonsoft.Json;
@@ -149,6 +148,10 @@ namespace HitsSniffer.Controller
                 InternalTimer = DateTime.UtcNow;
 
             return hasTimePassed;
+        }
+
+        public void FinishWorking()
+        {
         }
     }
 }

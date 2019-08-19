@@ -4,6 +4,7 @@ using HitsSniffer.Model.Interfaces;
 
 namespace HitsSniffer.Model
 {
+    [DbTableName("users", true)]
     [DbTableName("user_stats")]
     public class UserData : IData
     {

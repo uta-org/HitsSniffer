@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-08-2019 a las 19:05:52
+-- Tiempo de generación: 19-08-2019 a las 12:34:04
 -- Versión del servidor: 10.3.16-MariaDB
 -- Versión de PHP: 7.3.7
 
@@ -43,11 +43,24 @@ CREATE TABLE `hit_counter` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `organizations`
+--
+
+CREATE TABLE `organizations` (
+  `id` int(11) NOT NULL,
+  `name` text NOT NULL,
+  `date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `organization_stats`
 --
 
 CREATE TABLE `organization_stats` (
   `id` int(11) NOT NULL,
+  `org_id` int(11) NOT NULL,
   `name` text NOT NULL,
   `date` date NOT NULL,
   `members` int(11) NOT NULL,
@@ -55,6 +68,18 @@ CREATE TABLE `organization_stats` (
   `packages` int(11) NOT NULL,
   `teams` int(11) NOT NULL,
   `projects` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `repositories`
+--
+
+CREATE TABLE `repositories` (
+  `id` int(11) NOT NULL,
+  `name` text NOT NULL,
+  `date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -85,11 +110,24 @@ CREATE TABLE `repository_stats` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `name` text NOT NULL,
+  `date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `user_stats`
 --
 
 CREATE TABLE `user_stats` (
   `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `name` text NOT NULL,
   `date` date NOT NULL,
   `followers` int(11) NOT NULL,
@@ -114,9 +152,22 @@ ALTER TABLE `hit_counter`
   ADD KEY `repo_id` (`repo_id`);
 
 --
+-- Indices de la tabla `organizations`
+--
+ALTER TABLE `organizations`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `organization_stats`
 --
 ALTER TABLE `organization_stats`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `org_id` (`org_id`);
+
+--
+-- Indices de la tabla `repositories`
+--
+ALTER TABLE `repositories`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -128,10 +179,17 @@ ALTER TABLE `repository_stats`
   ADD KEY `user_owner_id` (`user_owner_id`);
 
 --
+-- Indices de la tabla `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `user_stats`
 --
 ALTER TABLE `user_stats`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -141,6 +199,12 @@ ALTER TABLE `user_stats`
 -- AUTO_INCREMENT de la tabla `hit_counter`
 --
 ALTER TABLE `hit_counter`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `organizations`
+--
+ALTER TABLE `organizations`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -150,9 +214,21 @@ ALTER TABLE `organization_stats`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `repositories`
+--
+ALTER TABLE `repositories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `repository_stats`
 --
 ALTER TABLE `repository_stats`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `users`
+--
+ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -169,16 +245,32 @@ ALTER TABLE `user_stats`
 -- Filtros para la tabla `hit_counter`
 --
 ALTER TABLE `hit_counter`
-  ADD CONSTRAINT `hit_counter_ibfk_1` FOREIGN KEY (`org_owner_id`) REFERENCES `organization_stats` (`id`),
-  ADD CONSTRAINT `hit_counter_ibfk_2` FOREIGN KEY (`user_owner_id`) REFERENCES `user_stats` (`id`),
-  ADD CONSTRAINT `hit_counter_ibfk_3` FOREIGN KEY (`repo_id`) REFERENCES `repository_stats` (`id`);
+  ADD CONSTRAINT `hit_counter_ibfk_1` FOREIGN KEY (`repo_id`) REFERENCES `repositories` (`id`);
 
 --
--- Filtros para la tabla `repository_stats`
+-- Filtros para la tabla `organizations`
 --
-ALTER TABLE `repository_stats`
-  ADD CONSTRAINT `repository_stats_ibfk_1` FOREIGN KEY (`org_owner_id`) REFERENCES `organization_stats` (`id`),
-  ADD CONSTRAINT `repository_stats_ibfk_2` FOREIGN KEY (`user_owner_id`) REFERENCES `user_stats` (`id`);
+ALTER TABLE `organizations`
+  ADD CONSTRAINT `organizations_ibfk_1` FOREIGN KEY (`id`) REFERENCES `hit_counter` (`org_owner_id`);
+
+--
+-- Filtros para la tabla `organization_stats`
+--
+ALTER TABLE `organization_stats`
+  ADD CONSTRAINT `organization_stats_ibfk_1` FOREIGN KEY (`id`) REFERENCES `repository_stats` (`org_owner_id`);
+
+--
+-- Filtros para la tabla `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`id`) REFERENCES `hit_counter` (`user_owner_id`);
+
+--
+-- Filtros para la tabla `user_stats`
+--
+ALTER TABLE `user_stats`
+  ADD CONSTRAINT `user_stats_ibfk_1` FOREIGN KEY (`id`) REFERENCES `repository_stats` (`user_owner_id`),
+  ADD CONSTRAINT `user_stats_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

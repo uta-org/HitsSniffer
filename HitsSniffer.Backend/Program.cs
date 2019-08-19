@@ -7,10 +7,12 @@ namespace HitsSniffer
     // TODO: Create a blacklist worker, where users/repos/orgs without enough activity will not be tracked
     // Conditions must be: activity in the last 10 days, at least a week (repos/orgs) and one month (users) old, at least 50 commits (users/repos) and 5 repos (orgs)
     // TODO: Search how to awake this process when a reboot is done in Linux
+    // TODO: Display bandwidth usage
 
     internal sealed class Program
     {
         private static IntervalHitsWorker HitsWorker { get; } = IntervalHitsWorker.Instance;
+        private static IntervalOrgWorker OrgWorker { get; } = IntervalOrgWorker.Instance;
 
         private static void Main(string[] args)
         {
@@ -20,6 +22,8 @@ namespace HitsSniffer
             SetConsoleCtrlHandler(handler, true);
 
             HitsWorker.StartWorking();
+            OrgWorker.StartWorking();
+
             Console.ReadKey(true);
         }
 
@@ -29,6 +33,8 @@ namespace HitsSniffer
             {
                 // Console exiting
                 SqlWorker.Release();
+
+                OrgWorker.FinishWorking();
             }
 
             return false;
