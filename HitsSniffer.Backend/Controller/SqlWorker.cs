@@ -73,16 +73,15 @@ namespace HitsSniffer.Controller
         public static void InsertInto(this MySqlCommand cmd, List<ColumnData> list, string tableName, bool executeQuery)
         {
             string columnHeader = GetColumns(list);
-
             string valuesHeader = string.Join(",", list.Select((o, index) => $"@val{index}"));
 
-            string query = $"INSERT INTO {tableName}({columnHeader}) VALUES ({valuesHeader})";
+            string query = $"INSERT INTO {tableName} ({columnHeader}) VALUES ({valuesHeader})";
 
             {
                 int index = 0;
                 foreach (var item in list)
                 {
-                    if (item.MySqlDbType.HasValue)
+                    if (item.MySqlDbType.HasValue && item.DbType.HasValue)
                         cmd.Parameters.Add(new MySqlParameter { ParameterName = $"@val{index}", Value = item.Value, MySqlDbType = item.MySqlDbType.Value, DbType = item.DbType.Value });
                     else
                         cmd.Parameters.Add(new MySqlParameter { ParameterName = $"@val{index}", Value = item.Value });
@@ -105,8 +104,22 @@ namespace HitsSniffer.Controller
                 {
                     // TODO: Fix
                     Console.WriteLine(e, Color.Red);
+                    Console.WriteLine($"Query:\n{GetQuery(query, list.Select(i => i.Value).ToArray())}", Color.Yellow);
                 }
             }
+        }
+
+        private static string GetQuery(string query, params object[] objs)
+        {
+            for (var index = 0; index < objs.Length; index++)
+            {
+                var o = objs[index];
+                string handle = $"@val{index}";
+
+                query = query.Replace(handle, o == null ? "NULL" : o.ToString());
+            }
+
+            return query;
         }
 
         private static string GetColumns(List<ColumnData> list)
@@ -141,7 +154,7 @@ namespace HitsSniffer.Controller
         public static string GetTableNameFromInstance<T>()
             where T : IPrimaryKey
         {
-            return (typeof(T).GetCustomAttributes(true).First() as DbColumnNameAttribute)?.Name;
+            return (typeof(T).GetCustomAttributes(typeof(DbTableNameAttribute), false).First() as DbTableNameAttribute)?.Name;
         }
 
         public class ColumnData
