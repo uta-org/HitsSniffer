@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-08-2019 a las 21:33:04
+-- Tiempo de generación: 20-08-2019 a las 15:36:38
 -- Versión del servidor: 10.3.16-MariaDB
 -- Versión de PHP: 7.3.7
 
@@ -134,6 +134,7 @@ CREATE TABLE `user_stats` (
   `following` int(11) NOT NULL,
   `repositories` int(11) NOT NULL,
   `commits` int(11) NOT NULL,
+  `commits_last_year` int(11) NOT NULL,
   `projects` int(11) NOT NULL,
   `starts_given` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

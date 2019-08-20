@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using HitsSniffer.Controller.Interfaces;
 using HtmlAgilityPack;
 using uzLib.Lite.Core;
+using uzLib.Lite.Extensions;
 using static HitsSniffer.Controller.DriverWorker;
 
 namespace HitsSniffer.Controller
@@ -34,15 +37,42 @@ namespace HitsSniffer.Controller
             throw new NotImplementedException();
         }
 
-        protected virtual HtmlNode PrepareSource(string url)
+        protected virtual HtmlNode PrepareSource(string url, bool useDriver = true)
+            => GetSourceCode(url, useDriver);
+
+        private static HtmlNode GetSourceCode(string url, bool useDriver)
         {
-            Driver.Navigate().GoToUrl(url);
-            var source = Driver.PageSource;
+            if (useDriver)
+            {
+                Driver.Navigate().GoToUrl(url);
+                var source = Driver.PageSource;
 
-            var doc = new HtmlDocument();
-            doc.LoadHtml(source);
+                var doc = new HtmlDocument();
+                doc.LoadHtml(source);
 
-            return doc.DocumentNode;
+                return doc.DocumentNode;
+            }
+            else
+            {
+                string source;
+
+                using (var wc = new WebClient())
+                    source = wc.DownloadString(url);
+
+                var doc = new HtmlDocument();
+                doc.Load(source);
+
+                return doc.DocumentNode;
+            }
+        }
+    }
+
+    internal static class BaseWorkerHelper
+    {
+        internal static int GetYearlyContributions(this HtmlNode html)
+        {
+            string contributionsStr = html.GetNodeByClass("js-yearly-contributions").FirstChild.ChildNodes[1].InnerText;
+            return int.Parse(Regex.Match(contributionsStr, @"\d+").Value);
         }
     }
 }

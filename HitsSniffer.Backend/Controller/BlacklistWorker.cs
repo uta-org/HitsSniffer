@@ -79,8 +79,7 @@ namespace HitsSniffer.Controller
             string currentMonth = DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture);
             string lastTimelineMonth = html.GetNodeByClass("profile-timeline-month-heading").InnerText;
 
-            string contributionsStr = html.GetNodeByClass("js-yearly-contributions").FirstChild.ChildNodes[1].InnerText;
-            int contribsOnLastYear = int.Parse(Regex.Match(contributionsStr, @"\d+").Value);
+            int contribsOnLastYear = html.GetYearlyContributions();
 
             return lastTimelineMonth == currentMonth && contribsOnLastYear >= 50;
         }

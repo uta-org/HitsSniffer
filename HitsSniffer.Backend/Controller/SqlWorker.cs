@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using HitsSniffer.Model.Attrs;
 using HitsSniffer.Model.Interfaces;
 using MySql.Data.MySqlClient;
+using uzLib.Lite.Extensions;
 using Console = Colorful.Console;
 
 namespace HitsSniffer.Controller
@@ -88,8 +89,74 @@ namespace HitsSniffer.Controller
             return -1;
         }
 
-        public static int? BeginExistsTransaction<T>(string name)
-            where T : IData
+        public static void DoSelect<T>(Action<MySqlDataReader> readerCallback,
+            params Tuple<string, object>[] @params)
+            where T : IPrimaryKey
+            => DoSelect<T>(readerCallback, "*", string.Empty, string.Empty, string.Empty, false, @params);
+
+        public static void DoSelect<T>(Action<MySqlDataReader> readerCallback, string columns = "*",
+            params Tuple<string, object>[] @params)
+            where T : IPrimaryKey
+            => DoSelect<T>(readerCallback, columns, string.Empty, string.Empty, string.Empty, false, @params);
+
+        public static void DoSelect<T>(Action<MySqlDataReader> readerCallback, string columns = "*", bool mainTable = true,
+            params Tuple<string, object>[] @params)
+            where T : IPrimaryKey
+            => DoSelect<T>(readerCallback, columns, string.Empty, string.Empty, string.Empty, mainTable, @params);
+
+        public static void DoSelect<T>(Action<MySqlDataReader> readerCallback, string columns = "*", string whereClause = "", bool mainTable = true, params Tuple<string, object>[] @params)
+            where T : IPrimaryKey
+            => DoSelect<T>(readerCallback, columns, whereClause, string.Empty, string.Empty, mainTable, @params);
+
+        public static void DoSelect<T>(Action<MySqlDataReader> readerCallback, string columns = "*", string whereClause = "", string orderBy = "", bool mainTable = true, params Tuple<string, object>[] @params)
+            where T : IPrimaryKey
+            => DoSelect<T>(readerCallback, columns, whereClause, orderBy, string.Empty, mainTable, @params);
+
+        public static void DoSelect<T>(Action<MySqlDataReader> readerCallback, string columns = "*", string whereClause = "", string orderBy = "", string limitClause = "", bool mainTable = true, params Tuple<string, object>[] @params)
+            where T : IPrimaryKey
+        {
+            if (readerCallback == null)
+                throw new ArgumentNullException(nameof(readerCallback));
+
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(mainTable);
+
+                string query = $"SELECT {columns} FROM {tableName}";
+
+                if (!string.IsNullOrEmpty(whereClause))
+                    query += $"WHERE {whereClause}";
+
+                if (!string.IsNullOrEmpty(orderBy))
+                    query += $"ORDER BY {orderBy}";
+
+                if (!string.IsNullOrEmpty(limitClause))
+                    query += $"LIMIT {limitClause}";
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+
+                if (!@params.IsNullOrEmpty())
+                    foreach (var param in @params)
+                        cmd.Parameters.AddWithValue(param.Item1, param.Item2);
+
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                    {
+                        readerCallback(reader);
+                    }
+            }
+        }
+
+        public static int? DoExistsTransaction<T>(string name)
+            where T : IPrimaryKey
+            => BeginExistsTransaction<T>(name, false, false);
+
+        public static int? BeginExistsTransaction<T>(string name, bool mainTable = true, bool trackTransaction = true)
+            where T : IPrimaryKey
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
@@ -99,20 +166,21 @@ namespace HitsSniffer.Controller
 
             using (var cmd = Connection.CreateCommand())
             {
-                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(mainTable);
 
-                string query = $"SELECT id FROM {tableName} WHERE name = @name";
+                string query = $"SELECT id FROM {tableName} WHERE name = @name ORDER BY date";
 
                 cmd.CommandText = query;
                 cmd.CommandType = CommandType.Text;
                 cmd.Parameters.AddWithValue("@name", name);
 
                 using (var reader = cmd.ExecuteReader())
-                    while (reader.Read())
+                    while (reader.Read()) // Return first record ordered by date
                         return int.Parse(reader["id"].ToString());
             }
 
-            IsBeginTransaction = true;
+            if (trackTransaction)
+                IsBeginTransaction = true;
 
             return null;
         }
@@ -153,7 +221,7 @@ namespace HitsSniffer.Controller
         }
 
         public static int RegisterTableValue<T>(string name)
-            where T : IData
+            where T : IPrimaryKey
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
@@ -175,6 +243,29 @@ namespace HitsSniffer.Controller
 
                 cmd.ExecuteNonQuery();
                 return (int)cmd.LastInsertedId;
+            }
+        }
+
+        public static void IterateRecords<T>(Action<MySqlDataReader> readerCallback)
+            where T : IPrimaryKey
+        {
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+
+                string query = $"SELECT * FROM {tableName}";
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                    {
+                        readerCallback?.Invoke(reader);
+                    }
             }
         }
 

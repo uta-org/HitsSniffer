@@ -17,6 +17,12 @@ namespace HitsSniffer.Controller
 
         private const string countSelector = "js-profile-repository-count";
 
+        public override void StartWorking()
+        {
+            PrepareDriver();
+            GetWhitelistedUrlsFromDatabase();
+        }
+
         public override void FinishWorking()
         {
             CloseDriver();
@@ -24,9 +30,6 @@ namespace HitsSniffer.Controller
 
         protected override void TimerCallback(object state)
         {
-            PrepareDriver();
-            GetWhitelistedUrlsFromDatabase();
-
             // TODO: Do parallel work
             foreach (var whitelistedUrl in WhitelistedUrls)
             {
@@ -37,9 +40,10 @@ namespace HitsSniffer.Controller
 
                 var tabs = html.GetNodesByClass("pagehead-tabs-item");
 
+                // html.GetNodeByClass("org-name").InnerText
                 var orgData = new OrgData
                 {
-                    Name = html.GetNodeByClass("org-name").InnerText,
+                    Name = whitelistedUrl.Split('/').Last(),
                     Members = int.Parse(html.GetNodesByClass("js-profile-tab-count-container").First(node => node.Name.ToLowerInvariant() == "div").GetNodeByClass(countSelector).InnerText),
                     Packages = GetCountFrom(tabs, 1),
                     Projects = GetCountFrom(tabs, 3),
@@ -61,12 +65,14 @@ namespace HitsSniffer.Controller
 
         protected override void GetWhitelistedUrlsFromDatabase()
         {
-            // Get organizations names and add it prefix
+            var localList = new List<string>();
 
-            // TODO
-            // For this, we will need an IEnumerator with all the records from the repository table
-            // Then, foreach record we will get the linked org/user (name) for the repository
-            // Then, we will form the complete url
+            SqlWorker.IterateRecords<OrgData>(reader =>
+            {
+                localList.Add(reader["name"].ToString());
+            });
+
+            WhitelistedUrls = localList.Select(item => string.Format(TemplateUrl, item)).ToArray();
         }
     }
 }

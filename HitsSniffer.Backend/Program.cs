@@ -1,5 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Collections.Generic;
+using System.Drawing;
+using System.Runtime.InteropServices;
 using HitsSniffer.Controller;
+using HitsSniffer.Controller.Interfaces;
 using Console = Colorful.Console;
 
 namespace HitsSniffer
@@ -9,8 +12,13 @@ namespace HitsSniffer
 
     internal sealed class Program
     {
-        private static IntervalHitsWorker HitsWorker { get; } = IntervalHitsWorker.Instance;
-        private static IntervalOrgWorker OrgWorker { get; } = IntervalOrgWorker.Instance;
+        private static List<IWorker> Workers = new List<IWorker>
+        {
+            IntervalOrgWorker.Instance,
+            IntervalHitsWorker.Instance,
+            IntervalRepoWorker.Instance,
+            IntervalUserWorker.Instance
+        };
 
         private static void Main(string[] args)
         {
@@ -19,8 +27,17 @@ namespace HitsSniffer
             handler = ConsoleEventCallback;
             SetConsoleCtrlHandler(handler, true);
 
-            HitsWorker.StartWorking();
-            OrgWorker.StartWorking();
+            foreach (var worker in Workers)
+            {
+                try
+                {
+                    worker.StartWorking();
+                }
+                catch
+                {
+                    Console.WriteLine($"WARNING: Not implemented worker of type '{worker.GetType().Name}' method 'StartWorking'...", Color.Yellow);
+                }
+            }
 
             Console.ReadKey(true);
         }
@@ -32,7 +49,17 @@ namespace HitsSniffer
                 // Console exiting
                 SqlWorker.Release();
 
-                OrgWorker.FinishWorking();
+                foreach (var worker in Workers)
+                {
+                    try
+                    {
+                        worker.FinishWorking();
+                    }
+                    catch
+                    {
+                        Console.WriteLine($"WARNING: Not implemented worker of type '{worker.GetType().Name}' method 'FinishWorking'...", Color.Yellow);
+                    }
+                }
             }
 
             return false;

@@ -29,6 +29,9 @@ namespace HitsSniffer.Model
         [DbColumnName("commits")]
         public int Commits { get; set; }
 
+        [DbColumnName("commits_last_year")]
+        public int CommitsLastYear { get; set; }
+
         [DbColumnName("projects")]
         public int Projects { get; set; }
 

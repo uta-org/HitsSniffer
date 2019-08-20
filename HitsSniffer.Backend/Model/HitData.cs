@@ -17,10 +17,10 @@ namespace HitsSniffer.Model
 
         public string RawData { get; }
 
-        [DbColumnName("path", 6, MySqlDbType.Text, DbType.String)]
+        [DbColumnName("path", 4, MySqlDbType.Text, DbType.String)]
         public string Path { get; set; }
 
-        [DbColumnName("sid", 9, MySqlDbType.Text, DbType.String)]
+        [DbColumnName("sid", 7, MySqlDbType.Text, DbType.String)]
         public string SID { get; set; }
 
         // ===== END DATA FROM SNIFFING =====
@@ -30,27 +30,27 @@ namespace HitsSniffer.Model
         [DbColumnName("id", 1)]
         public int Id { get; set; }
 
-        // TODO
-        [DbColumnName("org_owner_id", 2)]
-        public int? OrgId { get; set; }
+        //// TODO
+        //[DbColumnName("org_owner_id", 2)]
+        //public int? OrgId { get; set; }
+
+        //// TODO
+        //[DbColumnName("user_owner_id", 3)]
+        //public int? UserId { get; set; }
 
         // TODO
-        [DbColumnName("user_owner_id", 3)]
-        public int? UserId { get; set; }
-
-        // TODO
-        [DbColumnName("repo_id", 4)]
+        [DbColumnName("repo_id", 2)]
         public int? RepoId { get; set; }
 
         // ====
 
-        [DbColumnName("date", 5)]
+        [DbColumnName("date", 3)]
         public DateTime Date { get; set; }
 
-        [DbColumnName("hits", 7)]
+        [DbColumnName("hits", 5)]
         public int Hits { get; set; }
 
-        [DbColumnName("hash", 8, MySqlDbType.Text, DbType.String)]
+        [DbColumnName("hash", 6, MySqlDbType.Text, DbType.String)]
         public string Hash { get; set; }
 
         // ===== END DATA FROM DATABASE =====
@@ -83,59 +83,59 @@ namespace HitsSniffer.Model
 
         private void SetExternalData()
         {
-            bool toggleFlag = GetDataAsUser(out string userOrOrganization, out string repository);
+            string repository = GetRepoName();
 
-            SetIds(userOrOrganization, repository, toggleFlag, out var orgId, out var userId, out var repoId);
+            SetIds(repository, out var repoId);
 
-            OrgId = orgId;
-            UserId = userId;
+            //OrgId = orgId;
+            //UserId = userId;
             RepoId = repoId;
         }
 
         // true = user, false = organization
-        private bool GetDataAsUser(out string userOrOrganization, out string repository)
+        private string GetRepoName()
         {
             string path = Path.Substring(1);
 
             var parts = path.Split('/');
 
-            userOrOrganization = parts[0];
-            repository = parts[1];
+            //userOrOrganization = parts[0];
+            return parts[1];
 
-            return IsUserOrOrg(userOrOrganization);
+            //return IsUserOrOrg(userOrOrganization);
         }
 
-        private void SetIds(string userOrOrganization, string repository, bool toggleFlag, out int? orgId, out int? userId, out int? repoId)
+        private void SetIds(string repository, out int? repoId)
         {
             // First, we check if the user/org/repo is blacklisted
-            bool? isUserBlacklisted = toggleFlag ? !BlacklistWorker.IsValid(userOrOrganization, BlacklistWorker.Type.User) : (bool?)null;
-            bool? isOrgBlacklisted = !toggleFlag ? !BlacklistWorker.IsValid(userOrOrganization, BlacklistWorker.Type.Organization) : (bool?)null;
+            //bool? isUserBlacklisted = toggleFlag ? !BlacklistWorker.IsValid(userOrOrganization, BlacklistWorker.Type.User) : (bool?)null;
+            //bool? isOrgBlacklisted = !toggleFlag ? !BlacklistWorker.IsValid(userOrOrganization, BlacklistWorker.Type.Organization) : (bool?)null;
             bool isRepoBlacklisted = !BlacklistWorker.IsValid(repository, BlacklistWorker.Type.Repository);
 
-            // If not, then get ids
-            if (toggleFlag)
-            {
-                userId = isUserBlacklisted == true ? (int?)null :
-                    SqlWorker.BeginExistsTransaction<UserData>(userOrOrganization) ?? SqlWorker.RegisterTableValue<UserData>(userOrOrganization);
+            //// If not, then get ids
+            //if (toggleFlag)
+            //{
+            //    userId = isUserBlacklisted == true ? (int?)null :
+            //        SqlWorker.BeginExistsTransaction<UserData>(userOrOrganization) ?? SqlWorker.RegisterTableValue<UserData>(userOrOrganization);
 
-                // If false, means not registered user/organization/repo in the database, due to not met conditions, then we need to add it to the blacklist
-                // If first time, then add to blacklist
-                if (!SqlWorker.EndExistsTransaction() && isUserBlacklisted == false && !BlacklistWorker.IsUserListable(userOrOrganization))
-                    BlacklistWorker.Add(userOrOrganization, BlacklistWorker.Type.User);
+            //    // If false, means not registered user/organization/repo in the database, due to not met conditions, then we need to add it to the blacklist
+            //    // If first time, then add to blacklist
+            //    if (!SqlWorker.EndExistsTransaction() && isUserBlacklisted == false && !BlacklistWorker.IsUserListable(userOrOrganization))
+            //        BlacklistWorker.Add(userOrOrganization, BlacklistWorker.Type.User);
 
-                orgId = null;
-            }
-            else
-            {
-                userId = null;
+            //    orgId = null;
+            //}
+            //else
+            //{
+            //    userId = null;
 
-                orgId = isOrgBlacklisted == true ? (int?)null :
-                    SqlWorker.BeginExistsTransaction<OrgData>(userOrOrganization) ?? SqlWorker.RegisterTableValue<OrgData>(userOrOrganization);
+            //    orgId = isOrgBlacklisted == true ? (int?)null :
+            //        SqlWorker.BeginExistsTransaction<OrgData>(userOrOrganization) ?? SqlWorker.RegisterTableValue<OrgData>(userOrOrganization);
 
-                // If first time, then add to blacklist
-                if (!SqlWorker.EndExistsTransaction() && isOrgBlacklisted == false && !BlacklistWorker.IsOrgListable(userOrOrganization))
-                    BlacklistWorker.Add(userOrOrganization, BlacklistWorker.Type.Organization);
-            }
+            //    // If first time, then add to blacklist
+            //    if (!SqlWorker.EndExistsTransaction() && isOrgBlacklisted == false && !BlacklistWorker.IsOrgListable(userOrOrganization))
+            //        BlacklistWorker.Add(userOrOrganization, BlacklistWorker.Type.Organization);
+            //}
 
             repoId = isRepoBlacklisted ? (int?)null :
                 SqlWorker.BeginExistsTransaction<RepoData>(repository) ?? SqlWorker.RegisterTableValue<RepoData>(repository);
@@ -157,25 +157,25 @@ namespace HitsSniffer.Model
         }
 
         // true = user, false = organization
-        private static bool IsUserOrOrg(string name)
-        {
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentNullException(nameof(name));
+        //private static bool IsUserOrOrg(string name)
+        //{
+        //    if (string.IsNullOrEmpty(name))
+        //        throw new ArgumentNullException(nameof(name));
 
-            //const string ContentType = "text/plain; charset=UTF-8";
-            //const string UserAgent = "curl/7.65.3";
-            //const string AcceptHeader = "*/*";
-            const string Selector = "p-nickname";
+        //    //const string ContentType = "text/plain; charset=UTF-8";
+        //    //const string UserAgent = "curl/7.65.3";
+        //    //const string AcceptHeader = "*/*";
+        //    const string Selector = "p-nickname";
 
-            string source;
+        //    string source;
 
-            using (var wc = new WebClient())
-                source = wc.DownloadString(string.Format(DriverWorker.TemplateUrl, name));
+        //    using (var wc = new WebClient())
+        //        source = wc.DownloadString(string.Format(DriverWorker.TemplateUrl, name));
 
-            var doc = new HtmlDocument();
-            doc.LoadHtml(source);
+        //    var doc = new HtmlDocument();
+        //    doc.LoadHtml(source);
 
-            return doc.DocumentNode.GetNodeByClass(Selector) != null;
-        }
+        //    return doc.DocumentNode.GetNodeByClass(Selector) != null;
+        //}
     }
 }
