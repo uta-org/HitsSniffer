@@ -1,28 +1,28 @@
-﻿using System.Threading;
-using HitsSniffer.Controller.Interfaces;
-using uzLib.Lite.Core;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using HitsSniffer.Model;
+using HtmlAgilityPack;
+using uzLib.Lite.Extensions;
 using static HitsSniffer.Controller.DriverWorker;
 
 namespace HitsSniffer.Controller
 {
-    public class IntervalOrgWorker : Singleton<IntervalOrgWorker>, IWorker
+    public sealed class IntervalOrgWorker : BaseWorker<IntervalOrgWorker>
     {
-        public int IntervalMs { get; } = 10 * 60 * 1000;
-        public Timer Timer { get; private set; }
+        protected override Timer Timer { get; set; }
 
-        private static string[] WhitelistedUrls;
+        protected override string[] WhitelistedUrls { get; set; }
 
-        public void StartWorking()
-        {
-            Timer = new Timer(TimerCallback, null, 0, IntervalMs);
-        }
+        private const string countSelector = "js-profile-repository-count";
 
-        public void FinishWorking()
+        public override void FinishWorking()
         {
             CloseDriver();
         }
 
-        private void TimerCallback(object state)
+        protected override void TimerCallback(object state)
         {
             PrepareDriver();
             GetWhitelistedUrlsFromDatabase();
@@ -30,14 +30,36 @@ namespace HitsSniffer.Controller
             // TODO: Do parallel work
             foreach (var whitelistedUrl in WhitelistedUrls)
             {
-                Driver.Navigate().GoToUrl(whitelistedUrl);
+                var html = PrepareSource(whitelistedUrl);
 
                 // Create a instance of the OrgData class, setting all the needed props
                 // Then, save it on the DB
+
+                var tabs = html.GetNodesByClass("pagehead-tabs-item");
+
+                var orgData = new OrgData
+                {
+                    Name = html.GetNodeByClass("org-name").InnerText,
+                    Members = int.Parse(html.GetNodesByClass("js-profile-tab-count-container").First(node => node.Name.ToLowerInvariant() == "div").GetNodeByClass(countSelector).InnerText),
+                    Packages = GetCountFrom(tabs, 1),
+                    Projects = GetCountFrom(tabs, 3),
+                    Repositories = GetCountFrom(tabs, 0),
+                    Teams = GetCountFrom(tabs, 2),
+                    Date = DateTime.Now
+                };
+
+                orgData.DoQuery();
             }
         }
 
-        private static void GetWhitelistedUrlsFromDatabase()
+        private static int GetCountFrom(IEnumerable<HtmlNode> nodes, int index)
+        {
+            var node = nodes.ElementAt(index);
+
+            return int.Parse(node.GetNodeByClass(countSelector).InnerText);
+        }
+
+        protected override void GetWhitelistedUrlsFromDatabase()
         {
             // Get organizations names and add it prefix
 

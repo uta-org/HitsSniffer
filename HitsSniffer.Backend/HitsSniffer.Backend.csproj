@@ -73,6 +73,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controller\BaseWorker.cs" />
     <Compile Include="Controller\BlacklistWorker.cs" />
     <Compile Include="Controller\DriverWorker.cs" />
     <Compile Include="Controller\Interfaces\IWorker.cs" />

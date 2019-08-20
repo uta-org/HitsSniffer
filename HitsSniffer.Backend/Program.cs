@@ -38,7 +38,7 @@ namespace HitsSniffer
             return false;
         }
 
-        private static ConsoleEventDelegate handler;   // Keeps it from getting garbage collected
+        private static ConsoleEventDelegate handler; // Keeps it from getting garbage collected
 
         // Pinvoke
         private delegate bool ConsoleEventDelegate(int eventType);

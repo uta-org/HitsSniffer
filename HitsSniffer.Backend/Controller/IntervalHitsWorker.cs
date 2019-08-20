@@ -4,18 +4,16 @@ using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using HitsSniffer.Controller.Interfaces;
 using HitsSniffer.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using uzLib.Lite.Core;
 using uzLib.Lite.Extensions;
 using uzLib.Lite.ExternalCode.Extensions;
 using Console = Colorful.Console;
 
 namespace HitsSniffer.Controller
 {
-    public sealed class IntervalHitsWorker : Singleton<IntervalHitsWorker>, IWorker
+    public sealed class IntervalHitsWorker : BaseWorker<IntervalHitsWorker>
     {
         private static string RegexPattern { get; } = @"\{.+?\}";
         private static string HitUrl { get; } = "http://hits.dwyl.io/socket.io/?EIO=3&transport=polling&sid={0}";
@@ -23,38 +21,39 @@ namespace HitsSniffer.Controller
         private static string UserAgent { get; } = "curl/7.65.3";
         private static string AcceptHeader { get; } = "*/*";
 
-        public Timer Timer { get; private set; }
+        protected override Timer Timer { get; set; }
 
-        private static string LastSID;
+        protected override string[] WhitelistedUrls { get; set; }
+
+        private static string CurrentSID;
         private static DateTime InternalTimer;
         private static int PingInterval;
         private static int PingTimeout;
 
-        private const bool DEBUG = true;
-        private static int IntervalDebugMS = 2000;
+        public override int IntervalMs { get; } = 2000;
 
-        public void StartWorking()
+        public override void StartWorking()
         {
-            LastSID = GetSID(out PingInterval, out PingTimeout);
-            Timer = new Timer(state => TimerCallback(LastSID, state), null, 0, DEBUG ? IntervalDebugMS : PingInterval);
+            CurrentSID = GetSID(out PingInterval, out PingTimeout);
+            Timer = new Timer(TimerCallback, null, 0, DEBUG ? IntervalMs : PingInterval);
         }
 
-        private void TimerCallback(string sid, object state)
+        protected override void TimerCallback(object state)
         {
-            if (string.IsNullOrEmpty(LastSID) || HasTimePassed())
-                LastSID = GetSID();
+            if (string.IsNullOrEmpty(CurrentSID) || HasTimePassed())
+                CurrentSID = GetSID();
 
-            if (string.IsNullOrEmpty(sid))
+            if (string.IsNullOrEmpty(CurrentSID))
             {
                 Console.WriteLine("There was an error receiving the SID!", Color.Red);
                 return;
             }
 
-            var data = GetData(sid).ToList();
+            var data = GetData(CurrentSID).ToList();
 
             if (data.IsNullOrEmpty())
             {
-                Console.WriteLine($"Wrong request made at {DateTime.Now} with SID '{sid}'!", Color.Red);
+                Console.WriteLine($"Wrong request made at {DateTime.Now} with SID '{CurrentSID}'!", Color.Red);
                 return;
             }
 
@@ -109,12 +108,12 @@ namespace HitsSniffer.Controller
             }
             catch
             {
-                string lastSID = (string)LastSID.Clone();
+                string _sid = (string)CurrentSID.Clone();
 
-                LastSID = GetSID();
-                Console.WriteLine($"Error occurred while making request! (Changing SID from '{lastSID}' to '{LastSID}')", Color.Red);
+                CurrentSID = GetSID();
+                Console.WriteLine($"Error occurred while making request! (Changing SID from '{_sid}' to '{CurrentSID}')", Color.Red);
 
-                string newUrl = string.Format(HitUrl, LastSID);
+                string newUrl = string.Format(HitUrl, CurrentSID);
                 json = newUrl.MakeRequest(ContentType, UserAgent, AcceptHeader);
             }
 
@@ -148,10 +147,6 @@ namespace HitsSniffer.Controller
                 InternalTimer = DateTime.UtcNow;
 
             return hasTimePassed;
-        }
-
-        public void FinishWorking()
-        {
         }
     }
 }
