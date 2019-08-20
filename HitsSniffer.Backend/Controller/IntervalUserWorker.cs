@@ -40,8 +40,6 @@ namespace HitsSniffer.Controller
                 // Create a instance of the OrgData class, setting all the needed props
                 // Then, save it on the DB
 
-                //var tabs = html.GetNodesByClass("pagehead-tabs-item");
-
                 string name = whitelistedUrl.Split('/').Last();
                 int commitNum = TrackCommits(html, name, out int lastYearCommitNum);
 
@@ -90,15 +88,6 @@ namespace HitsSniffer.Controller
             }
             else
             {
-                // /z3nth10n?tab=overview&from=2019-08-01&to=2019-08-20
-
-                /*
-                 *
-                 *  Console.WriteLine();
-		            Console.WriteLine($"{DateTime.Now.ToString("yyyy")}-01-01");
-                 *
-                 */
-
                 // TODO: Check this
                 int lastTotalCommits = 0;
                 int lastRecordedLastYearCommit = 0;

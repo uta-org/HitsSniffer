@@ -36,8 +36,6 @@ namespace HitsSniffer.Controller
             {
                 var html = PrepareSource(whitelistedUrl);
 
-                //var tabs = html.GetNodeByClass("UnderlineNav-body").GetNodesByName("a");
-
                 // Create a instance of the OrgData class, setting all the needed props
                 // Then, save it on the DB
 
@@ -48,7 +46,6 @@ namespace HitsSniffer.Controller
                 const string textEmphasized = "text-emphasized";
 
                 string name = whitelistedUrl.Split('/').Last();
-                // int commitNum = TrackCommits(html, name, out int lastYearCommitNum);
 
                 var repoData = new RepoData
                 {
@@ -85,14 +82,12 @@ namespace HitsSniffer.Controller
             return int.Parse((useGlobalSelector ? node.GetNodeByClass(countSelector) : node).InnerText);
         }
 
-        //private static int GetCountFrom(IEnumerable<HtmlNode> nodes, Func<HtmlNode, HtmlNode> subNode, int index)
-        //{
-        //    var node = nodes.ElementAt(index);
-        //    return int.Parse(subNode(node).InnerText);
-        //}
-
         protected override void GetWhitelistedUrlsFromDatabase()
         {
+            // For this, we will need an IEnumerator with all the records from the repository table
+            // Then, foreach record we will get the linked org/user (name) for the repository
+            // Then, we will form the complete url
+
             var localList = new List<string>();
 
             SqlWorker.IterateRecords<RepoData>(reader =>
@@ -134,20 +129,7 @@ namespace HitsSniffer.Controller
 
         private void ReaderCallback(MySqlDataReader obj, out string ownerName)
         {
-            throw new NotImplementedException();
+            ownerName = obj["name"].ToString();
         }
-
-        // TODO: DONT DELETE
-        //public override void FinishWorking()
-        //{
-        //    throw new System.NotImplementedException();
-
-        //    // Get organizations names and add it prefix
-
-        //    // TODO
-        //    // For this, we will need an IEnumerator with all the records from the repository table
-        //    // Then, foreach record we will get the linked org/user (name) for the repository
-        //    // Then, we will form the complete url
-        //}
     }
 }
