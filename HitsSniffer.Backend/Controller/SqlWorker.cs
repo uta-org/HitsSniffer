@@ -61,31 +61,6 @@ namespace HitsSniffer.Controller
             }
         }
 
-        //public static bool DoExists<T>(this T instance)
-        //    where T : IData
-        //{
-        //    if (instance == null)
-        //        throw new ArgumentNullException(nameof(instance));
-
-        //    while (Connection.State != ConnectionState.Open)
-        //        Thread.Sleep(100);
-
-        //    using (var cmd = Connection.CreateCommand())
-        //    {
-        //        string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
-
-        //        string query = $"SELECT COUNT(*) FROM {tableName} WHERE name = @name";
-
-        //        cmd.CommandText = query;
-        //        cmd.CommandType = CommandType.Text;
-        //        cmd.Parameters.AddWithValue("@name", instance.Name);
-
-        //        int recordNum = (int)cmd.ExecuteScalar();
-
-        //        return recordNum > 0;
-        //    }
-        //}
-
         public static int DoExists<T>(this T instance)
             where T : IData
         {
