@@ -107,7 +107,13 @@ namespace HitsSniffer.Controller
                 {
                     lastTotalCommits = int.Parse(reader["commits"].ToString());
                     lastRecordedLastYearCommit = int.Parse(reader["commits_last_year"].ToString());
-                }, "*", "name = @name", "date", "LIMIT 1", false);
+                },
+                    "*",
+                    "name = @name",
+                    "date",
+                    "1",
+                    false,
+                    new Tuple<string, object>("@name", username));
 
                 int _commits = lastTotalCommits + (lastYearCommits - lastRecordedLastYearCommit);
                 totalCommits = _commits;

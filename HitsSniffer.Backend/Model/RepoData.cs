@@ -50,8 +50,11 @@ namespace HitsSniffer.Model
         [DbColumnName("projects")]
         public int Projects { get; set; }
 
-        [DbColumnName("hits")]
-        public int Hits { get; set; }
+        [DbColumnName("issues")]
+        public int Issues { get; set; }
+
+        //[DbColumnName("hits")]
+        //public int Hits { get; set; }
 
         [DbColumnName("last_commit")]
         public DateTime LastCommit { get; set; }
