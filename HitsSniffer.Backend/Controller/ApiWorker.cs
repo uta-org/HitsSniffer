@@ -10,7 +10,7 @@ namespace HitsSniffer.Controller
     {
         public static string ApiUrl => "https://api.github.com/{0}/{1}";
         public static string ReposHandle => "repos";
-        public static string ApiReposTemplate => string.Format(ApiUrl, ReposHandle, "{1}");
+        public static string ApiReposTemplate => string.Format(ApiUrl, ReposHandle, "{0}");
 
         /// <summary>
         /// Determines whether [is organization or user owner].
@@ -19,12 +19,20 @@ namespace HitsSniffer.Controller
         /// <returns>
         ///   <c>true</c> if [is true the owner is an user] [the specified data]; otherwise, <c>false</c>.
         /// </returns>
-        public static bool IsOrgOrUserOwner(this RepoData data)
+        public static bool? IsOrgOrUserOwner(this RepoData data)
         {
-            string url = string.Format(ApiReposTemplate, data);
-            var jObj = JsonConvert.DeserializeObject<JObject>(url.MakeRequest());
+            try
+            {
+                string url = string.Format(ApiReposTemplate, data);
+                var jObj = JsonConvert.DeserializeObject<JObject>(url.MakeRequest());
 
-            return jObj["owner"]["type"].ToObject<string>().ToLowerInvariant() == "user";
+                return jObj["owner"]["type"].ToObject<string>().ToLowerInvariant() == "user";
+            }
+            catch
+            {
+                // Couldn't find repo
+                return null;
+            }
         }
 
         /// <summary>
@@ -34,9 +42,13 @@ namespace HitsSniffer.Controller
         /// <returns></returns>
         public static Type GetTypeFromOwner(this RepoData data)
         {
-            return IsOrgOrUserOwner(data)
+            var value = IsOrgOrUserOwner(data);
+            if (!value.HasValue)
+                return null;
+
+            return value.HasValue && value.Value
                 ? typeof(UserData)
-                : typeof(RepoData);
+                : typeof(OrgData);
         }
     }
 }

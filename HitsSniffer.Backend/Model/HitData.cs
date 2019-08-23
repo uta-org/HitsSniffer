@@ -84,29 +84,34 @@ namespace HitsSniffer.Model
         private void SetExternalData()
         {
             var repository = GetRepo();
-
             SetIds(repository, out var repoId);
 
-            //OrgId = orgId;
-            //UserId = userId;
             RepoId = repoId;
         }
 
         // true = user, false = organization
         private RepoData GetRepo()
         {
-            string path = Path.Substring(1);
+            if (Path.Contains("http"))
+            {
+                string path = Path.Substring(1);
+                var parts = path.Split('/');
 
-            var parts = path.Split('/');
+                var fixedData = new RepoData(parts[4], parts[5]);
+                return fixedData;
+            }
+            else
+            {
+                string path = Path.Substring(1);
+                var parts = path.Split('/');
 
-            //userOrOrganization = parts[0];
-            return new RepoData(parts[1], parts[0]);
-
-            //return IsUserOrOrg(userOrOrganization);
+                return new RepoData(parts[1], parts[0]);
+            }
         }
 
         private void SetIds(RepoData repository, out int? repoId)
         {
+            // TODO: I need that line 107 executes before whitelist string array set
             bool isRepoBlacklisted = !BlacklistWorker.IsValid(repository.ToString(), BlacklistWorker.Type.Repository);
 
             repoId = isRepoBlacklisted ? (int?)null :

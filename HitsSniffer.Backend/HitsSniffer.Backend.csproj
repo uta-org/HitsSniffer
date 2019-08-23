@@ -75,19 +75,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controller\ApiWorker.cs" />
     <Compile Include="Controller\BaseWorker.cs" />
     <Compile Include="Controller\BlacklistWorker.cs" />
     <Compile Include="Controller\DriverWorker.cs" />
     <Compile Include="Controller\Interfaces\IWorker.cs" />
-    <Compile Include="Controller\IntervalHitsWorker.cs" />
-    <Compile Include="Controller\IntervalOrgWorker.cs" />
-    <Compile Include="Controller\IntervalRepoWorker.cs" />
-    <Compile Include="Controller\IntervalUserWorker.cs" />
+    <Compile Include="Controller\Intervals\IntervalHitsWorker.cs" />
+    <Compile Include="Controller\Intervals\IntervalOrgWorker.cs" />
+    <Compile Include="Controller\Intervals\IntervalRepoWorker.cs" />
+    <Compile Include="Controller\Intervals\IntervalUserWorker.cs" />
     <Compile Include="Model\Attrs\DbColumnNameAttribute.cs" />
     <Compile Include="Model\Attrs\DbTableNameAttribute.cs" />
     <Compile Include="Model\HitData.cs" />
     <Compile Include="Model\Interfaces\IData.cs" />
-    <Compile Include="Model\Interfaces\IDependant.cs" />
     <Compile Include="Model\Interfaces\IPrimaryKey.cs" />
     <Compile Include="Model\OrgData.cs" />
     <Compile Include="Model\RepoData.cs" />

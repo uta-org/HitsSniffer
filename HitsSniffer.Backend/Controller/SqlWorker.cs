@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -211,6 +212,7 @@ namespace HitsSniffer.Controller
                 Thread.Sleep(100);
 
             bool isRepo = ownerType != null;
+            // Sometimes we could see that a repo has a null ownereType, in this case the FK associated with it will not be saved
 
             using (var cmd = Connection.CreateCommand())
             {
@@ -225,8 +227,11 @@ namespace HitsSniffer.Controller
                     {
                         IPrimaryKey dependant = DefineDependantInstance(repoData, ownerType);
 
-                        cmd.Parameters.AddWithValue("@dep_id", dependant.Id);
-                        query = $"INSERT INTO {tableName}(id,{(ownerType == typeof(OrgData) ? "org_id" : "user_id")},name,date) VALUES(@id, @dep_id, @name, @date)";
+                        if (dependant != null)
+                        {
+                            cmd.Parameters.AddWithValue("@dep_id", dependant.Id);
+                            query = $"INSERT INTO {tableName}(id,{(ownerType == typeof(OrgData) ? "org_id" : "user_id")},name,date) VALUES(@id, @dep_id, @name, @date)";
+                        }
                     }
                     else
                     {
@@ -236,7 +241,7 @@ namespace HitsSniffer.Controller
 
                 cmd.Parameters.AddWithValue("@id", 0);
                 cmd.Parameters.AddWithValue("@name", ((dynamic)instance).Name);
-                cmd.Parameters.AddWithValue("@date", DateTime.Now);
+                cmd.Parameters.AddWithValue("@date", SqlHelper.GetNow());
 
                 cmd.CommandText = query;
                 cmd.CommandType = CommandType.Text;
@@ -251,15 +256,12 @@ namespace HitsSniffer.Controller
             if (!repoData.IsDependant)
                 throw new InvalidOperationException();
 
+            bool dependantExists = DoExistsTransaction(repoData.OwnerName, dependantType);
+
             IPrimaryKey dependantInstance;
-            if (!DoExistsTransaction(repoData.OwnerName, dependantType))
-            {
-                dependantInstance = RegisterTableValueAsPrimary(repoData.OwnerName, dependantType);
-            }
-            else
-            {
-                dependantInstance = GetDependant(repoData.OwnerName, dependantType);
-            }
+            dependantInstance = !dependantExists
+                ? RegisterTableValueAsPrimary(repoData.OwnerName, dependantType)
+                : GetDependant(repoData.OwnerName, dependantType);
 
             return dependantInstance;
         }
@@ -286,7 +288,7 @@ namespace HitsSniffer.Controller
                     while (reader.Read())
                     {
                         int id = int.Parse(reader["id"].ToString());
-                        var date = DateTime.Parse(reader["date"].ToString());
+                        var date = reader["date"].ToString().CastFromSQLDate();
 
                         return (IPrimaryKey)Activator.CreateInstance(dependantType, id, name, date);
                     }
@@ -297,30 +299,81 @@ namespace HitsSniffer.Controller
 
         private static IPrimaryKey RegisterTableValueAsPrimary(string name, Type type)
         {
+            // This method is private because it's call its ensured to be called checking that the org or the user doesn't exists
+
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
             while (Connection.State != ConnectionState.Open)
                 Thread.Sleep(100);
 
+            IPrimaryKey retValue;
+
+            bool isOrg = type == typeof(OrgData);
+            if (isOrg)
+            {
+                bool isValid = BlacklistWorker.IsValid(name, BlacklistWorker.Type.Organization);
+
+                // In theory, this will never be called
+                if (!isValid)
+                    return null;
+
+                if (!BlacklistWorker.IsOrgListable(name))
+                    return null;
+            }
+            else
+            {
+                bool isValid = BlacklistWorker.IsValid(name, BlacklistWorker.Type.User);
+
+                // In theory, this will never be called
+                if (!isValid)
+                    return null;
+
+                if (!BlacklistWorker.IsUserListable(name))
+                    return null;
+            }
+
             using (var cmd = Connection.CreateCommand())
             {
-                string tableName = SqlHelper.GetTableNameFromInstance(type, true);
+                DisableForeignKeyChecks(cmd);
+                {
+                    string tableName = SqlHelper.GetTableNameFromInstance(type, true);
 
-                string query = $"INSERT INTO {tableName}(id,name,date) VALUES(@id, @name, @date)";
+                    string query = $"INSERT INTO {tableName}(id, name, date) VALUES(@id, @name, @date)";
 
-                DateTime date = DateTime.Now;
+                    DateTime date = DateTime.Now;
 
-                cmd.Parameters.AddWithValue("@id", 0);
-                cmd.Parameters.AddWithValue("@name", name);
-                cmd.Parameters.AddWithValue("@date", date);
+                    cmd.Parameters.AddWithValue("@id", 0);
+                    cmd.Parameters.AddWithValue("@name", name);
+                    cmd.Parameters.AddWithValue("@date", date.ToSQLDate());
 
-                cmd.CommandText = query;
-                cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = query;
+                    cmd.CommandType = CommandType.Text;
 
-                cmd.ExecuteNonQuery();
-                return (IPrimaryKey)Activator.CreateInstance(type, (int)cmd.LastInsertedId, name, date);
+                    cmd.ExecuteNonQuery();
+                    retValue = (IPrimaryKey)Activator.CreateInstance(type, (int)cmd.LastInsertedId, name, date);
+                }
+                EnableForeignKeyChecks(cmd);
             }
+
+            return retValue;
+        }
+
+        public static void EnableForeignKeyChecks(MySqlCommand cmd)
+            => InternalToggleForeignKeyChecks(cmd, true);
+
+        public static void DisableForeignKeyChecks(MySqlCommand cmd)
+            => InternalToggleForeignKeyChecks(cmd, false);
+
+        private static void InternalToggleForeignKeyChecks(MySqlCommand cmd, bool enable)
+        {
+            string query = "SET FOREIGN_KEY_CHECKS={0}";
+            query = string.Format(query, enable ? 1 : 0);
+
+            cmd.CommandText = query;
+            cmd.CommandType = CommandType.Text;
+
+            cmd.ExecuteNonQuery();
         }
 
         public static void IterateRecords<T>(Action<MySqlDataReader> readerCallback)
@@ -360,6 +413,8 @@ namespace HitsSniffer.Controller
 
     public static class SqlHelper
     {
+        public static string DateHandle => "yyyy-MM-dd H:mm:ss";
+
         public static void InsertInto(this MySqlCommand cmd, List<ColumnData> list, string tableName, bool executeQuery)
         {
             string columnHeader = GetColumns(list);
@@ -453,6 +508,21 @@ namespace HitsSniffer.Controller
                 .GetCustomAttributes(typeof(DbTableNameAttribute), false)
                 .Cast<DbTableNameAttribute>()
                 .First(attr => attr?.MainTable == mainTable)?.Name;
+        }
+
+        public static string ToSQLDate(this DateTime date)
+        {
+            return date.ToString(DateHandle);
+        }
+
+        public static DateTime CastFromSQLDate(this string date)
+        {
+            return DateTime.ParseExact(date, DateHandle, CultureInfo.InvariantCulture);
+        }
+
+        public static string GetNow()
+        {
+            return DateTime.Now.ToSQLDate();
         }
 
         public class ColumnData

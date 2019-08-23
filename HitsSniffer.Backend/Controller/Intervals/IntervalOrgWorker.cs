@@ -66,6 +66,7 @@ namespace HitsSniffer.Controller.Intervals
         protected override void GetWhitelistedUrlsFromDatabase()
         {
             // TODO: If none Org is added in the database then this will be empty, we need to add this from the dumped data from the socket
+            // To fix it, we need to ensure that in every 10 minutes cycle we add the needed data
 
             var localList = new List<string>();
 

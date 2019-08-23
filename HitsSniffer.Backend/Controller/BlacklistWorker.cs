@@ -117,7 +117,7 @@ namespace HitsSniffer.Controller
                 source = wc.DownloadString(url);
 
             var doc = new HtmlDocument();
-            doc.Load(source);
+            doc.LoadHtml(source);
 
             return doc.DocumentNode;
         }

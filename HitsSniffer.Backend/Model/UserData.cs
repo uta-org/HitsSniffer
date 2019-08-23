@@ -6,7 +6,7 @@ namespace HitsSniffer.Model
 {
     [DbTableName("users", true)]
     [DbTableName("user_stats")]
-    public class UserData : IData, IDependant
+    public class UserData : IData
     {
         [DbColumnName("id")]
         public int Id { get; set; }
