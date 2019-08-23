@@ -7,7 +7,7 @@ using HtmlAgilityPack;
 using uzLib.Lite.Extensions;
 using static HitsSniffer.Controller.DriverWorker;
 
-namespace HitsSniffer.Controller
+namespace HitsSniffer.Controller.Intervals
 {
     public sealed class IntervalOrgWorker : BaseWorker<IntervalOrgWorker>
     {
@@ -65,6 +65,8 @@ namespace HitsSniffer.Controller
 
         protected override void GetWhitelistedUrlsFromDatabase()
         {
+            // TODO: If none Org is added in the database then this will be empty, we need to add this from the dumped data from the socket
+
             var localList = new List<string>();
 
             SqlWorker.IterateRecords<OrgData>(reader =>

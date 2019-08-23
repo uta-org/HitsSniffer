@@ -58,5 +58,31 @@ namespace HitsSniffer.Model
 
         [DbColumnName("last_commit")]
         public DateTime LastCommit { get; set; }
+
+        public string OwnerName { get; }
+
+        public bool IsDependant => !OrgId.HasValue && !UserId.HasValue;
+
+        public RepoData()
+        {
+        }
+
+        public RepoData(string name, string ownerName)
+        {
+            Name = name;
+            OwnerName = ownerName;
+        }
+
+        public RepoData(int id, string name, DateTime date)
+        {
+            Id = id;
+            Name = name;
+            Date = date;
+        }
+
+        public override string ToString()
+        {
+            return $"{OwnerName}/{Name}";
+        }
     }
 }

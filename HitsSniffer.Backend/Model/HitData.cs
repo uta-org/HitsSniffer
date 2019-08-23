@@ -83,7 +83,7 @@ namespace HitsSniffer.Model
 
         private void SetExternalData()
         {
-            string repository = GetRepoName();
+            var repository = GetRepo();
 
             SetIds(repository, out var repoId);
 
@@ -93,60 +93,28 @@ namespace HitsSniffer.Model
         }
 
         // true = user, false = organization
-        private string GetRepoName()
+        private RepoData GetRepo()
         {
             string path = Path.Substring(1);
 
             var parts = path.Split('/');
 
             //userOrOrganization = parts[0];
-            return parts[1];
+            return new RepoData(parts[1], parts[0]);
 
             //return IsUserOrOrg(userOrOrganization);
         }
 
-        private void SetIds(string repository, out int? repoId)
+        private void SetIds(RepoData repository, out int? repoId)
         {
-            // First, we check if the user/org/repo is blacklisted
-            //bool? isUserBlacklisted = toggleFlag ? !BlacklistWorker.IsValid(userOrOrganization, BlacklistWorker.Type.User) : (bool?)null;
-            //bool? isOrgBlacklisted = !toggleFlag ? !BlacklistWorker.IsValid(userOrOrganization, BlacklistWorker.Type.Organization) : (bool?)null;
-            bool isRepoBlacklisted = !BlacklistWorker.IsValid(repository, BlacklistWorker.Type.Repository);
-
-            //// If not, then get ids
-            //if (toggleFlag)
-            //{
-            //    userId = isUserBlacklisted == true ? (int?)null :
-            //        SqlWorker.BeginExistsTransaction<UserData>(userOrOrganization) ?? SqlWorker.RegisterTableValue<UserData>(userOrOrganization);
-
-            //    // If false, means not registered user/organization/repo in the database, due to not met conditions, then we need to add it to the blacklist
-            //    // If first time, then add to blacklist
-            //    if (!SqlWorker.EndExistsTransaction() && isUserBlacklisted == false && !BlacklistWorker.IsUserListable(userOrOrganization))
-            //        BlacklistWorker.Add(userOrOrganization, BlacklistWorker.Type.User);
-
-            //    orgId = null;
-            //}
-            //else
-            //{
-            //    userId = null;
-
-            //    orgId = isOrgBlacklisted == true ? (int?)null :
-            //        SqlWorker.BeginExistsTransaction<OrgData>(userOrOrganization) ?? SqlWorker.RegisterTableValue<OrgData>(userOrOrganization);
-
-            //    // If first time, then add to blacklist
-            //    if (!SqlWorker.EndExistsTransaction() && isOrgBlacklisted == false && !BlacklistWorker.IsOrgListable(userOrOrganization))
-            //        BlacklistWorker.Add(userOrOrganization, BlacklistWorker.Type.Organization);
-            //}
+            bool isRepoBlacklisted = !BlacklistWorker.IsValid(repository.ToString(), BlacklistWorker.Type.Repository);
 
             repoId = isRepoBlacklisted ? (int?)null :
-                SqlWorker.BeginExistsTransaction<RepoData>(repository) ?? SqlWorker.RegisterTableValue<RepoData>(repository);
+                SqlWorker.BeginExistsTransaction<RepoData>(repository.Name) ?? repository.RegisterTableValue(repository.GetTypeFromOwner());
 
             // If first time, then add to blacklist
-            if (!SqlWorker.EndExistsTransaction() && !isRepoBlacklisted && !BlacklistWorker.IsRepositoryListable(repository))
-                BlacklistWorker.Add(repository, BlacklistWorker.Type.Repository);
-
-            //return (toggleFlag && (!orgId.HasValue || orgId.Value == -1) ||
-            //       !toggleFlag && (!userId.HasValue || userId.Value != -1))
-            //                   && (!repoId.HasValue || repoId.Value != -1);
+            if (!SqlWorker.EndExistsTransaction() && !isRepoBlacklisted && !BlacklistWorker.IsRepositoryListable(repository.ToString()))
+                BlacklistWorker.Add(repository.ToString(), BlacklistWorker.Type.Repository);
         }
 
         public override string ToString()
@@ -155,27 +123,5 @@ namespace HitsSniffer.Model
                    Environment.NewLine +
                    $"Data: {RawData}";
         }
-
-        // true = user, false = organization
-        //private static bool IsUserOrOrg(string name)
-        //{
-        //    if (string.IsNullOrEmpty(name))
-        //        throw new ArgumentNullException(nameof(name));
-
-        //    //const string ContentType = "text/plain; charset=UTF-8";
-        //    //const string UserAgent = "curl/7.65.3";
-        //    //const string AcceptHeader = "*/*";
-        //    const string Selector = "p-nickname";
-
-        //    string source;
-
-        //    using (var wc = new WebClient())
-        //        source = wc.DownloadString(string.Format(DriverWorker.TemplateUrl, name));
-
-        //    var doc = new HtmlDocument();
-        //    doc.LoadHtml(source);
-
-        //    return doc.DocumentNode.GetNodeByClass(Selector) != null;
-        //}
     }
 }

@@ -7,7 +7,7 @@ using HtmlAgilityPack;
 using uzLib.Lite.Extensions;
 using static HitsSniffer.Controller.DriverWorker;
 
-namespace HitsSniffer.Controller
+namespace HitsSniffer.Controller.Intervals
 {
     public sealed class IntervalUserWorker : BaseWorker<IntervalUserWorker>
     {

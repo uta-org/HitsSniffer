@@ -11,7 +11,7 @@ using uzLib.Lite.Extensions;
 using uzLib.Lite.ExternalCode.Extensions;
 using Console = Colorful.Console;
 
-namespace HitsSniffer.Controller
+namespace HitsSniffer.Controller.Intervals
 {
     public sealed class IntervalHitsWorker : BaseWorker<IntervalHitsWorker>
     {

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using HitsSniffer.Model;
 using HitsSniffer.Model.Attrs;
 using HitsSniffer.Model.Interfaces;
 using MySql.Data.MySqlClient;
@@ -155,8 +157,14 @@ namespace HitsSniffer.Controller
             where T : IPrimaryKey
             => BeginExistsTransaction<T>(name, false, false);
 
+        public static bool DoExistsTransaction(string name, Type type)
+            => InternalBeginExistsTransaction(type, name, true, false).HasValue;
+
         public static int? BeginExistsTransaction<T>(string name, bool mainTable = true, bool trackTransaction = true)
             where T : IPrimaryKey
+            => InternalBeginExistsTransaction(typeof(T), name, mainTable, trackTransaction);
+
+        private static int? InternalBeginExistsTransaction(Type type, string name, bool mainTable = true, bool trackTransaction = true)
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
@@ -166,7 +174,7 @@ namespace HitsSniffer.Controller
 
             using (var cmd = Connection.CreateCommand())
             {
-                string tableName = SqlHelper.GetTableNameFromInstance<T>(mainTable);
+                string tableName = SqlHelper.GetTableNameFromInstance(type, mainTable);
 
                 string query = $"SELECT id FROM {tableName} WHERE name = @name ORDER BY date";
 
@@ -194,8 +202,7 @@ namespace HitsSniffer.Controller
             return true;
         }
 
-        public static int RegisterTableValue<T>(this T instance)
-            where T : IData
+        public static int RegisterTableValue(this object instance, Type ownerType)
         {
             if (instance == null)
                 throw new ArgumentNullException(nameof(instance));
@@ -203,13 +210,32 @@ namespace HitsSniffer.Controller
             while (Connection.State != ConnectionState.Open)
                 Thread.Sleep(100);
 
+            bool isRepo = ownerType != null;
+
             using (var cmd = Connection.CreateCommand())
             {
-                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+                string tableName = SqlHelper.GetTableNameFromInstance(instance.GetType(), true);
 
                 string query = $"INSERT INTO {tableName}(id,name,date) VALUES(@id, @name, @date)";
 
-                cmd.Parameters.AddWithValue("@name", instance.Name);
+                if (isRepo)
+                {
+                    var repoData = instance as RepoData;
+                    if (ownerType == typeof(OrgData) || ownerType == typeof(UserData))
+                    {
+                        IPrimaryKey dependant = DefineDependantInstance(repoData, ownerType);
+
+                        cmd.Parameters.AddWithValue("@dep_id", dependant.Id);
+                        query = $"INSERT INTO {tableName}(id,{(ownerType == typeof(OrgData) ? "org_id" : "user_id")},name,date) VALUES(@id, @dep_id, @name, @date)";
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException();
+                    }
+                }
+
+                cmd.Parameters.AddWithValue("@id", 0);
+                cmd.Parameters.AddWithValue("@name", ((dynamic)instance).Name);
                 cmd.Parameters.AddWithValue("@date", DateTime.Now);
 
                 cmd.CommandText = query;
@@ -220,8 +246,25 @@ namespace HitsSniffer.Controller
             }
         }
 
-        public static int RegisterTableValue<T>(string name)
-            where T : IPrimaryKey
+        public static IPrimaryKey DefineDependantInstance(RepoData repoData, Type dependantType)
+        {
+            if (!repoData.IsDependant)
+                throw new InvalidOperationException();
+
+            IPrimaryKey dependantInstance;
+            if (!DoExistsTransaction(repoData.OwnerName, dependantType))
+            {
+                dependantInstance = RegisterTableValueAsPrimary(repoData.OwnerName, dependantType);
+            }
+            else
+            {
+                dependantInstance = GetDependant(repoData.OwnerName, dependantType);
+            }
+
+            return dependantInstance;
+        }
+
+        public static IPrimaryKey GetDependant(string name, Type dependantType)
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
@@ -231,18 +274,52 @@ namespace HitsSniffer.Controller
 
             using (var cmd = Connection.CreateCommand())
             {
-                string tableName = SqlHelper.GetTableNameFromInstance<T>(true);
+                string tableName = SqlHelper.GetTableNameFromInstance(dependantType, true);
+
+                string query = $"SELECT id, date FROM {tableName} WHERE name = @name ORDER BY date";
+
+                cmd.CommandText = query;
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.AddWithValue("@name", name);
+
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                    {
+                        int id = int.Parse(reader["id"].ToString());
+                        var date = DateTime.Parse(reader["date"].ToString());
+
+                        return (IPrimaryKey)Activator.CreateInstance(dependantType, id, name, date);
+                    }
+            }
+
+            return default;
+        }
+
+        private static IPrimaryKey RegisterTableValueAsPrimary(string name, Type type)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            while (Connection.State != ConnectionState.Open)
+                Thread.Sleep(100);
+
+            using (var cmd = Connection.CreateCommand())
+            {
+                string tableName = SqlHelper.GetTableNameFromInstance(type, true);
 
                 string query = $"INSERT INTO {tableName}(id,name,date) VALUES(@id, @name, @date)";
 
+                DateTime date = DateTime.Now;
+
+                cmd.Parameters.AddWithValue("@id", 0);
                 cmd.Parameters.AddWithValue("@name", name);
-                cmd.Parameters.AddWithValue("@date", DateTime.Now);
+                cmd.Parameters.AddWithValue("@date", date);
 
                 cmd.CommandText = query;
                 cmd.CommandType = CommandType.Text;
 
                 cmd.ExecuteNonQuery();
-                return (int)cmd.LastInsertedId;
+                return (IPrimaryKey)Activator.CreateInstance(type, (int)cmd.LastInsertedId, name, date);
             }
         }
 
@@ -367,7 +444,12 @@ namespace HitsSniffer.Controller
         public static string GetTableNameFromInstance<T>(bool mainTable = false)
             where T : IPrimaryKey
         {
-            return typeof(T)
+            return GetTableNameFromInstance(typeof(T), mainTable);
+        }
+
+        public static string GetTableNameFromInstance(Type type, bool mainTable = false)
+        {
+            return type
                 .GetCustomAttributes(typeof(DbTableNameAttribute), false)
                 .Cast<DbTableNameAttribute>()
                 .First(attr => attr?.MainTable == mainTable)?.Name;

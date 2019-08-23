@@ -24,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,6 +34,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Colorful.Console, Version=1.2.9.0, Culture=neutral, processorArchitecture=MSIL">
@@ -85,6 +87,7 @@
     <Compile Include="Model\Attrs\DbTableNameAttribute.cs" />
     <Compile Include="Model\HitData.cs" />
     <Compile Include="Model\Interfaces\IData.cs" />
+    <Compile Include="Model\Interfaces\IDependant.cs" />
     <Compile Include="Model\Interfaces\IPrimaryKey.cs" />
     <Compile Include="Model\OrgData.cs" />
     <Compile Include="Model\RepoData.cs" />

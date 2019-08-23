@@ -6,7 +6,7 @@ namespace HitsSniffer.Model
 {
     [DbTableName("organizations", true)]
     [DbTableName("organization_stats")]
-    public class OrgData : IData
+    public class OrgData : IData, IDependant
     {
         [DbColumnName("id")]
         public int Id { get; set; }
@@ -31,5 +31,16 @@ namespace HitsSniffer.Model
 
         [DbColumnName("projects")]
         public int Projects { get; set; }
+
+        public OrgData()
+        {
+        }
+
+        public OrgData(int id, string name, DateTime date)
+        {
+            Id = id;
+            Name = name;
+            Date = date;
+        }
     }
 }

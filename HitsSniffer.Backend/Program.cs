@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using HitsSniffer.Controller;
 using HitsSniffer.Controller.Interfaces;
+using HitsSniffer.Controller.Intervals;
 using Console = Colorful.Console;
 
 namespace HitsSniffer
@@ -14,8 +15,8 @@ namespace HitsSniffer
     {
         private static List<IWorker> Workers = new List<IWorker>
         {
-            IntervalOrgWorker.Instance,
             IntervalHitsWorker.Instance,
+            IntervalOrgWorker.Instance,
             IntervalRepoWorker.Instance,
             IntervalUserWorker.Instance
         };
