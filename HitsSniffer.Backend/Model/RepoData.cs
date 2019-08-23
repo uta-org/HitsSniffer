@@ -59,7 +59,7 @@ namespace HitsSniffer.Model
         [DbColumnName("last_commit")]
         public DateTime LastCommit { get; set; }
 
-        public string OwnerName { get; }
+        public string OwnerName { get; set; }
 
         public bool IsDependant => !OrgId.HasValue && !UserId.HasValue;
 
@@ -83,6 +83,11 @@ namespace HitsSniffer.Model
         public override string ToString()
         {
             return $"{OwnerName}/{Name}";
+        }
+
+        public string Identifier()
+        {
+            return "Repository";
         }
     }
 }

@@ -48,5 +48,10 @@ namespace HitsSniffer.Model
             Name = name;
             Date = date;
         }
+
+        public string Identifier()
+        {
+            return "User";
+        }
     }
 }

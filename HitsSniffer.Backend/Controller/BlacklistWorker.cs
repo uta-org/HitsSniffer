@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
+using HitsSniffer.Model;
+using HitsSniffer.Model.Interfaces;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using uzLib.Lite.Extensions;
 using static HitsSniffer.Controller.DriverWorker;
+using Console = Colorful.Console;
 
 namespace HitsSniffer.Controller
 {
@@ -64,12 +67,29 @@ namespace HitsSniffer.Controller
         {
             var html = PrepareSourceCode(path);
 
-            var parsedTime = ParseTime(html.GetNodeByClass("commit-tease").ChildNodes[2].ChildNodes[2].FirstChild
-                                .GetAttributeValue("datetime", string.Empty));
+            DateTime parsedTime;
+            try
+            {
+                parsedTime = ParseTime(html.GetNodeByClass("commit-tease").GetElementChildNode(2).GetElementChildNode(2).FirstChild()
+                                    .GetAttributeValue("datetime", string.Empty));
+            }
+            catch
+            {
+                Console.WriteLine($"Cannot retrieve the last commit at this time for '{path}'!", Color.Yellow);
+                return false;
+            }
 
             int commits = int.Parse(html.GetNodeByClass("commits").GetNodeByClass("text-emphasized").InnerText);
 
-            return DateTime.Now - parsedTime > TimeSpan.FromDays(10) && commits >= 10;
+            var dateDiff = DateTime.Now - parsedTime;
+            bool isValid = dateDiff < TimeSpan.FromDays(10) && commits >= 10;
+
+            if (!isValid)
+                NotifyInvalidSource<UserData>(path,
+                    new[] { "Time From Last Commit", dateDiff.TotalDays.ToString("F2", CultureInfo.InvariantCulture) },
+                    new[] { "Commits", commits.ToString() });
+
+            return isValid;
         }
 
         public static bool IsUserListable(string username)
@@ -81,7 +101,14 @@ namespace HitsSniffer.Controller
 
             int contribsOnLastYear = html.GetYearlyContributions();
 
-            return lastTimelineMonth == currentMonth && contribsOnLastYear >= 50;
+            bool isValid = lastTimelineMonth == currentMonth && contribsOnLastYear >= 50;
+
+            if (!isValid)
+                NotifyInvalidSource<UserData>(username,
+                    new[] { "Has Committed On The Last Month", (lastTimelineMonth == currentMonth).ToString() },
+                    new[] { "Contributions On The Last Year", contribsOnLastYear.ToString() });
+
+            return isValid;
         }
 
         public static bool IsOrgListable(string organization)
@@ -89,15 +116,37 @@ namespace HitsSniffer.Controller
             var html = PrepareSourceCode(organization);
 
             var ul = html.GetNodeByClass("repo-list")
-                .FirstChild;
+                .FirstChild();
 
             var lastUpdate =
-                ParseTime(ul.FirstChild.ChildNodes.Last()
+                ParseTime(ul.FirstChild().LastChild()
                     .GetNodeByName("relative-time")
                     .GetAttributeValue("datetime", string.Empty));
 
-            // TODO: Debug
-            return DateTime.Now - lastUpdate > TimeSpan.FromDays(10) && ul.ChildNodes.Count > 5;
+            int numberOfRepos = ul.GetElementChildNodes().Count();
+            var dateDiff = DateTime.Now - lastUpdate;
+
+            bool isValid = dateDiff < TimeSpan.FromDays(10) && numberOfRepos > 5;
+
+            if (!isValid)
+                NotifyInvalidSource<OrgData>(organization,
+                    new[] { "Last Update", dateDiff.TotalDays.ToString("F2", CultureInfo.InvariantCulture) },
+                    new[] { "Repository Count", numberOfRepos.ToString() });
+
+            return isValid;
+        }
+
+        private static void NotifyInvalidSource<T>(string identifier, params string[][] values)
+            where T : IPrimaryKey
+            => NotifyInvalidSource<T>(identifier, Color.Yellow, values);
+
+        private static void NotifyInvalidSource<T>(string identifier, Color color = default, params string[][] values)
+        where T : IPrimaryKey
+        {
+            string simplifiedValues = string.Join(", ", values.Select(value => $"{value[0]}: {value[1]}"));
+
+            T testInstance = Activator.CreateInstance<T>();
+            Console.WriteLine($"The {testInstance.Identifier()} '{identifier}' doesn't meet the criteria. ({simplifiedValues})", color);
         }
 
         private static DateTime ParseTime(string timeStr)

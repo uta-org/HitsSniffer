@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Data;
-using System.Net;
 using HitsSniffer.Controller;
 using HitsSniffer.Model.Attrs;
 using HitsSniffer.Model.Interfaces;
-using HtmlAgilityPack;
 using MySql.Data.MySqlClient;
-using uzLib.Lite.Extensions;
 
 namespace HitsSniffer.Model
 {
@@ -92,21 +89,27 @@ namespace HitsSniffer.Model
         // true = user, false = organization
         private RepoData GetRepo()
         {
+            RepoData data;
+
             if (Path.Contains("http"))
             {
                 string path = Path.Substring(1);
                 var parts = path.Split('/');
 
-                var fixedData = new RepoData(parts[4], parts[5]);
-                return fixedData;
+                data = new RepoData(parts[4], parts[5]);
             }
             else
             {
                 string path = Path.Substring(1);
                 var parts = path.Split('/');
 
-                return new RepoData(parts[1], parts[0]);
+                data = new RepoData(parts[1], parts[0]);
             }
+
+            string url = string.Format(DriverWorker.TemplateUrl, data);
+            DriverWorker.PatchWithStatusCode(url);
+
+            return data;
         }
 
         private void SetIds(RepoData repository, out int? repoId)
@@ -127,6 +130,11 @@ namespace HitsSniffer.Model
             return $"SID: {SID}" +
                    Environment.NewLine +
                    $"Data: {RawData}";
+        }
+
+        public string Identifier()
+        {
+            return "Hit";
         }
     }
 }

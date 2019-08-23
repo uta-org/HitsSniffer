@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-08-2019 a las 17:54:10
+-- Tiempo de generación: 23-08-2019 a las 14:02:19
 -- Versión del servidor: 10.3.16-MariaDB
 -- Versión de PHP: 7.3.7
 
@@ -31,7 +31,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `hit_counter` (
   `id` int(11) NOT NULL,
   `repo_id` int(11) DEFAULT NULL,
-  `date` date NOT NULL,
+  `date` datetime NOT NULL,
   `path` text NOT NULL,
   `hits` int(11) NOT NULL,
   `hash` text NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE `hit_counter` (
 CREATE TABLE `organizations` (
   `id` int(11) NOT NULL,
   `name` text NOT NULL,
-  `date` date NOT NULL
+  `date` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -60,7 +60,7 @@ CREATE TABLE `organization_stats` (
   `id` int(11) NOT NULL,
   `org_id` int(11) NOT NULL,
   `name` text NOT NULL,
-  `date` date NOT NULL,
+  `date` datetime NOT NULL,
   `members` int(11) NOT NULL,
   `repositories` int(11) NOT NULL,
   `packages` int(11) NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE `repositories` (
   `org_id` int(11) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,
   `name` text NOT NULL,
-  `date` date NOT NULL
+  `date` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -93,7 +93,7 @@ CREATE TABLE `repository_stats` (
   `org_owner_id` int(11) DEFAULT NULL,
   `user_owner_id` int(11) DEFAULT NULL,
   `name` text NOT NULL,
-  `date` date NOT NULL,
+  `date` datetime NOT NULL,
   `commits` int(11) NOT NULL,
   `branches` int(11) NOT NULL,
   `releases` int(11) NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE `repository_stats` (
   `pulls` int(11) NOT NULL,
   `projects` int(11) NOT NULL,
   `issues` int(11) NOT NULL,
-  `last_commit` date NOT NULL
+  `last_commit` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -116,7 +116,7 @@ CREATE TABLE `repository_stats` (
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `name` text NOT NULL,
-  `date` date NOT NULL
+  `date` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -129,7 +129,7 @@ CREATE TABLE `user_stats` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `name` text NOT NULL,
-  `date` date NOT NULL,
+  `date` datetime NOT NULL,
   `followers` int(11) NOT NULL,
   `following` int(11) NOT NULL,
   `repositories` int(11) NOT NULL,
@@ -200,7 +200,7 @@ ALTER TABLE `user_stats`
 -- AUTO_INCREMENT de la tabla `hit_counter`
 --
 ALTER TABLE `hit_counter`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `organizations`
@@ -230,7 +230,7 @@ ALTER TABLE `repository_stats`
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `user_stats`

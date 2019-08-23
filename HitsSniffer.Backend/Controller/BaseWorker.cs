@@ -71,7 +71,7 @@ namespace HitsSniffer.Controller
     {
         internal static int GetYearlyContributions(this HtmlNode html)
         {
-            string contributionsStr = html.GetNodeByClass("js-yearly-contributions").FirstChild.ChildNodes[1].InnerText;
+            string contributionsStr = html.GetNodeByClass("js-yearly-contributions").FirstChild().GetNodeByName("h2").InnerText;
             return int.Parse(Regex.Match(contributionsStr, @"\d+").Value);
         }
     }
