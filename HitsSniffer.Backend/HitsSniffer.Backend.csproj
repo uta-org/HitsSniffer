@@ -79,11 +79,15 @@
     <Compile Include="Controller\BaseWorker.cs" />
     <Compile Include="Controller\BlacklistWorker.cs" />
     <Compile Include="Controller\DriverWorker.cs" />
+    <Compile Include="Controller\Enums\ExecuteMode.cs" />
+    <Compile Include="Controller\Enums\ExecuteQueryAs.cs" />
     <Compile Include="Controller\Interfaces\IWorker.cs" />
     <Compile Include="Controller\Intervals\IntervalHitsWorker.cs" />
     <Compile Include="Controller\Intervals\IntervalOrgWorker.cs" />
     <Compile Include="Controller\Intervals\IntervalRepoWorker.cs" />
     <Compile Include="Controller\Intervals\IntervalUserWorker.cs" />
+    <Compile Include="Controller\SqlPool.cs" />
+    <Compile Include="Controller\Data\SqlRequest.cs" />
     <Compile Include="Model\Attrs\DbColumnNameAttribute.cs" />
     <Compile Include="Model\Attrs\DbTableNameAttribute.cs" />
     <Compile Include="Model\HitData.cs" />
