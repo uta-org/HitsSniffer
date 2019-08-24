@@ -106,8 +106,7 @@ namespace HitsSniffer.Model
                 data = new RepoData(parts[1], parts[0]);
             }
 
-            string url = string.Format(DriverWorker.TemplateUrl, data);
-            DriverWorker.PatchWithStatusCode(url);
+            DriverWorker.PatchWithStatusCode(data);
 
             return data;
         }

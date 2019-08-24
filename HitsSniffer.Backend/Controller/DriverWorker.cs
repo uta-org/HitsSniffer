@@ -67,8 +67,8 @@ namespace HitsSniffer.Controller
 
                 var parts = location.Split('/');
 
-                string newOwner = parts[4];
-                data.OwnerName = newOwner; // TODO: Press F10 and debug newOwner applied to this RepoData instance and the oldOne
+                string newOwner = parts[3];
+                data.OwnerName = newOwner; // TODO: Press F10 and debug newOwner applied to this RepoData instance and the old one
             }
         }
     }

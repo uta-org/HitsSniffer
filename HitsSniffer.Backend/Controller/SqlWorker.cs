@@ -38,7 +38,8 @@ namespace HitsSniffer.Controller
                                       "port=3306;" +
                                       $"username={DBUser};" +
                                       $"password={DBPass};" +
-                                      $"database={DBName};";
+                                      $"database={DBName};"; // +
+                                                             // "MultipleActiveResultSets=True;";
 
             Connection = new MySqlConnection(connectionString);
             Task.Factory.StartNew(Connection.Open);
@@ -516,7 +517,14 @@ namespace HitsSniffer.Controller
 
         public static DateTime CastFromSQLDate(this string date)
         {
-            return DateTime.ParseExact(date, DateHandle, CultureInfo.InvariantCulture);
+            try
+            {
+                return DateTime.ParseExact(date, DateHandle, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return DateTime.Parse(date);
+            }
         }
 
         public static string GetNow()

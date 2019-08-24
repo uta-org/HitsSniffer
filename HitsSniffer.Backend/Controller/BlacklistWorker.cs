@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using HitsSniffer.Model;
 using HitsSniffer.Model.Interfaces;
@@ -67,6 +68,9 @@ namespace HitsSniffer.Controller
         {
             var html = PrepareSourceCode(path);
 
+            if (html == null)
+                return false;
+
             DateTime parsedTime;
             try
             {
@@ -79,7 +83,12 @@ namespace HitsSniffer.Controller
                 return false;
             }
 
-            int commits = int.Parse(html.GetNodeByClass("commits").GetNodeByClass("text-emphasized").InnerText);
+            int commits = int.Parse(html
+                .GetNodeByClass("commits")
+                .GetNodeByClass("num")
+                .InnerText
+                .Replace(",", string.Empty)
+                .Replace(".", string.Empty));
 
             var dateDiff = DateTime.Now - parsedTime;
             bool isValid = dateDiff < TimeSpan.FromDays(10) && commits >= 10;
@@ -95,6 +104,8 @@ namespace HitsSniffer.Controller
         public static bool IsUserListable(string username)
         {
             var html = PrepareSourceCode(username);
+            if (html == null)
+                return false;
 
             string currentMonth = DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture);
             string lastTimelineMonth = html.GetNodeByClass("profile-timeline-month-heading").InnerText;
@@ -114,6 +125,9 @@ namespace HitsSniffer.Controller
         public static bool IsOrgListable(string organization)
         {
             var html = PrepareSourceCode(organization);
+
+            if (html == null)
+                return false;
 
             var ul = html.GetNodeByClass("repo-list")
                 .FirstChild();
@@ -163,7 +177,14 @@ namespace HitsSniffer.Controller
             string source;
 
             using (var wc = new WebClient())
-                source = wc.DownloadString(url);
+                try
+                {
+                    source = wc.DownloadString(url);
+                }
+                catch
+                { // Cause due to a 400 error
+                    return null;
+                }
 
             var doc = new HtmlDocument();
             doc.LoadHtml(source);
